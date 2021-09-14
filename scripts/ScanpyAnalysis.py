@@ -6,9 +6,11 @@ import sys
 import re
 from os import listdir, makedirs
 from os.path import isfile, join, isdir, exists
+import pkg_resources
 
 import os
-libFile = join( os.path.dirname(os.path.realpath(__file__)), 'lib', 'ExampleAnalysis.md' )
+
+libFile = pkg_resources.resource_filename('ScanpyAutoAnalyzer',join( 'data', 'ExampleAnalysis.md' ))
 
 #>>> parser = argparse.ArgumentParser(prog='PROG')
 #>>> parser.add_argument('--foo', nargs='?', help='foo help')
@@ -47,9 +49,12 @@ parser.add_argument("-s", "--statsName", help="the name of the stats out folder"
 
 parser.add_argument("-g", "--goi", help="list of genes of interest (will be plotted on the data)", nargs='+')# -> "GenesOfInterest"
 
+parser.add_argument("-t", "--test", help="do not run the script", action='store_true')# -> "GenesOfInterest"
+
 args = parser.parse_args()
 
-print( vars(args) )
+if ( args.test ):
+    print( vars(args) )
 
 # read the example script
 txt = Path( libFile ).read_text()
@@ -142,8 +147,9 @@ with open( ofile, 'w') as f:
 jupyter = f"{args.outpath}/{args.name}.ipynb"
 ## now run these lines:
 #f"jupytext --to notebook {ofile}"
-f"jupytext --set-kernel python3 {ofile}"
-f"jupytext --to notebook --execute {ofile}"
+
+os.system(f"jupytext --set-kernel python3 {ofile}")
+os.system(f"jupytext --to notebook --execute {ofile}")
 # name -> "OUTFILE.h5ad"
 
 ## infiles - a check would be kind

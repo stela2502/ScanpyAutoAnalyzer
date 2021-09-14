@@ -20,8 +20,9 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    scripts = ['scripts/ExampleAnalysis.py'],
-    package_dir={"": "src"},
+    scripts = ['scripts/ScanpyAnalysis.py'],
+    package_dir={"ScanpyAutoAnalyzer": "src/ScanpyAutoAnalyzer"},
+    package_data={"ScanpyAutoAnalyzer": ["data/ExampleAnalysis.md"] },
     packages=setuptools.find_packages(where="src"),
     python_requires=">=3.6",
 )
