@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.8
+#!python
 
 import argparse, textwrap
 from pathlib import Path
@@ -88,24 +88,34 @@ if problems:
 # one h5ad file -> "H5FILE"
 # a list of loom files -> "loomIN"
 # a path with filtered_feature_bc_matrix subfolders
+
+def checkPath(path):
+    OK = None
+    try:
+        OK = not isfile( path )
+    except err:
+        print( "got an error from isdir!")
+        pass
+
+
 if not exists(args.input):
     print(f"\ninput is not a path or file: {args.input}\n", file=sys.stderr)
     parser.print_help(sys.stderr)
     sys.exit()
-elif isfile(args.input) and  re.search( '.h5ad$', args.input ) :
-    txt = txt.replace( "H5FILE", args.input )
-elif isfile(args.input) and re.search( '.loom$', args.input ) :
-    txt = txt.replace( "LoomIN", args.input )
+elif isfile(args.input) and  re.search( '.h5a?d?$', args.input ) :
+    txt = txt.replace( "H5FILE", os.path.abspath(args.input) )
+elif isfile(args.input) and re.search( '.loom$', args.input) :
+    txt = txt.replace( "LoomIN", os.path.abspath( args.input ) )
 else:
     ## read the whole folder and check
     mypath = args.input
-    CR = [f for f in listdir(mypath) if isdir(join(mypath, f)) and f == "filtered_feature_bc_matrix" ]
+    CR = [ os.path.abspath(f) for f in listdir(mypath) if f == "filtered_feature_bc_matrix" and checkPath(join(mypath, f)) ]
     if len(CR) > 0:
         CR = "\", \"".join(CR)
         txt = txt.replace( "CELLRANGERDATA", CR )
     else:
         MT = re.compile('.loom$')
-        LM = [f for f in listdir(mypath) if isfile(join(mypath, f)) and MT.match(f) ]
+        LM = [os.path.abspath(f) for f in listdir(mypath) if isfile(join(mypath, f)) and MT.match(f) ]
         if len(CR) > 0:
             CR = "\", \"".join(CR)
             txt = txt.replace( "LoomIN", CR )
