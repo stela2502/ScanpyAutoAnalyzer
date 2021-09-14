@@ -8,7 +8,7 @@ setuptools.setup(
     version="0.0.1",
     author="Stefan Lang",
     author_email="Stefan.Lang@med.lu.se",
-    description="P simple tool to prepare and run prepared jupyter notebooks.",
+    description="A simple tool to prepare and run prepared jupyter notebooks.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/stela2502/ScanpyAutoAnalyzer",
