@@ -101,7 +101,28 @@ def checkPath(path):
     except err:
         print( "got an error from isdir!")
         pass
+    return ( OK )
 
+def find_CR_Path( path ):
+    paths = listdir(path)
+    ret = [ ]
+    for f in paths:
+        #print(f + " ispath? "+ str( checkPath(join(path, f)) ) )
+        if f == "filtered_feature_bc_matrix" and checkPath(join(path, f)):
+            ret.append( os.path.abspath( join( path,f) ) )
+        elif checkPath(join(path, f)):
+            ret = [ ret, find_CR_Path( join(path,f) )]
+    return (ret)
+
+def find_loom_files( path, RE ):
+    paths = listdir(path)
+    ret = [ ]
+    for f in paths:
+        if RE.match(f) :
+            ret.append( os.path.abspath( join( path,f) ) )
+        elif checkPath(join(path, f)):
+            ret = [ ret, find_CR_Path( join(path,f) )]
+    return (ret)
 
 if not exists(args.input):
     print(f"\ninput is not a path or file: {args.input}\n", file=sys.stderr)
@@ -113,29 +134,29 @@ elif isfile(args.input) and re.search( '.loom$', args.input) :
     txt = txt.replace( "LoomIN", os.path.abspath( args.input ) )
 else:
     ## read the whole folder and check
-    mypath = args.input
-    CR = [ os.path.abspath(f) for f in listdir(mypath) if f == "filtered_feature_bc_matrix" and checkPath(join(mypath, f)) ]
+    CR = find_CR_Path ( args.input )
+
     if len(CR) > 0:
         CR = "\", \"".join(CR)
         txt = txt.replace( "CELLRANGERDATA", CR )
     else:
         MT = re.compile('.loom$')
-        LM = [os.path.abspath(f) for f in listdir(mypath) if isfile(join(mypath, f)) and MT.match(f) ]
+        LM = find_loom_files( args.input, MT )
         if len(CR) > 0:
             CR = "\", \"".join(CR)
             txt = txt.replace( "LoomIN", CR )
         else:
-            print(f"\nNo infile could be detected there:{args.input}\n", file=sys.stderr)
+            print(f"\nNo infile could be detected there: {args.input}\n", file=sys.stderr)
             parser.print_help(sys.stderr)
             sys.exit()
 
 
 txt = txt.replace( "OUTFILE", args.name )
-txt = txt.replace( "Key_ADDED", args.statsName )
+txt = txt.replace( "KEY_ADDED", args.statsName )
 txt = txt.replace( "DIMENSIONS", args.dimensions )
 
-txt = txt.replace( "\\\"MTEXCLUDE\\\"", str(args.mitoEX) )
-txt = txt.replace( "\\\"RPEXCLUDE\\\"", str(args.riboEX) )
+txt = txt.replace( "\"MTEXCLUDE\"", str(args.mitoEX) )
+txt = txt.replace( "\"RPEXCLUDE\"", str(args.riboEX) )
 
 if not exists( args.outpath ):
     makedirs(  args.outpath )
@@ -148,8 +169,9 @@ jupyter = f"{args.outpath}/{args.name}.ipynb"
 ## now run these lines:
 #f"jupytext --to notebook {ofile}"
 
-os.system(f"jupytext --set-kernel python3 {ofile}")
-os.system(f"jupytext --to notebook --execute {ofile}")
+if not args.test:
+    os.system(f"jupytext --set-kernel python3 {ofile}")
+    os.system(f"jupytext --to notebook --execute {ofile}")
 # name -> "OUTFILE.h5ad"
 
 ## infiles - a check would be kind
