@@ -12,12 +12,6 @@ import os
 
 libFile = pkg_resources.resource_filename('ScanpyAutoAnalyzer',join( 'data', 'ExampleAnalysis.md' ))
 
-#>>> parser = argparse.ArgumentParser(prog='PROG')
-#>>> parser.add_argument('--foo', nargs='?', help='foo help')
-#>>> parser.add_argument('bar', nargs='+', help='bar help')
-#>>> parser.print_help()
-#usage: PROG [-h] [--foo [FOO]] bar [bar ...]
-
 # Initiate the parser
 parser = argparse.ArgumentParser(description=textwrap.dedent('''\
         This script runs scanpy analyses based on the lib/ExampleAnalysis.ipynb python notebook.
@@ -49,6 +43,7 @@ parser.add_argument("-s", "--statsName", help="the name of the stats out folder"
 
 parser.add_argument("-g", "--goi", help="list of genes of interest (will be plotted on the data)", nargs='+')# -> "GenesOfInterest"
 
+# Run the created script?
 parser.add_argument("-t", "--test", help="do not run the script", action='store_true')# -> "GenesOfInterest"
 
 args = parser.parse_args()
