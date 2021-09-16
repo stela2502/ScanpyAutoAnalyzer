@@ -82,7 +82,7 @@ if not CellRangerH5[0] == "CELLRANGERH5":
     if len(CellRangerH5) > 1:
         for i in range(1,len(CellRangerH5)):
             tmp = scanpy.read_10x_h5( CellRangerH5[i] )
-            adata = adata0.concatenate(adata, tmp, batch_key='sample')
+            adata = adata.concatenate( tmp, batch_key='sample')
     adata.var_names_make_unique()
     adata
 ```
