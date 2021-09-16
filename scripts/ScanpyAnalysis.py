@@ -12,12 +12,6 @@ import os
 
 libFile = pkg_resources.resource_filename('ScanpyAutoAnalyzer',join( 'data', 'ExampleAnalysis.md' ))
 
-#>>> parser = argparse.ArgumentParser(prog='PROG')
-#>>> parser.add_argument('--foo', nargs='?', help='foo help')
-#>>> parser.add_argument('bar', nargs='+', help='bar help')
-#>>> parser.print_help()
-#usage: PROG [-h] [--foo [FOO]] bar [bar ...]
-
 # Initiate the parser
 parser = argparse.ArgumentParser(description=textwrap.dedent('''\
         This script runs scanpy analyses based on the lib/ExampleAnalysis.ipynb python notebook.
@@ -49,6 +43,7 @@ parser.add_argument("-s", "--statsName", help="the name of the stats out folder"
 
 parser.add_argument("-g", "--goi", help="list of genes of interest (will be plotted on the data)", nargs='+')# -> "GenesOfInterest"
 
+# Run the created script?
 parser.add_argument("-t", "--test", help="do not run the script", action='store_true')# -> "GenesOfInterest"
 
 args = parser.parse_args()
@@ -111,52 +106,61 @@ def find_CR_Path( path ):
         if f == "filtered_feature_bc_matrix" and checkPath(join(path, f)):
             ret.append( os.path.abspath( join( path,f) ) )
         elif checkPath(join(path, f)):
-            ret = [ ret, find_CR_Path( join(path,f) )]
+            ret.append( find_CR_Path( join(path,f) ) )
     return (ret)
 
-def find_loom_files( path, RE ):
+def find_loom_files( path, pattern ):
     paths = listdir(path)
-    ret = [ ]
+    ret = []
     for f in paths:
-        if RE.match(f) :
+        if re.search(pattern, f ):
             ret.append( os.path.abspath( join( path,f) ) )
         elif checkPath(join(path, f)):
-            ret = [ ret, find_CR_Path( join(path,f) )]
+            tmp = find_loom_files( join(path,f), pattern )
+            if (  len(tmp) >0 ):
+                ret.append( tmp )    
     return (ret)
 
 if not exists(args.input):
     print(f"\ninput is not a path or file: {args.input}\n", file=sys.stderr)
     parser.print_help(sys.stderr)
     sys.exit()
-elif isfile(args.input) and  re.search( '.h5a?d?$', args.input ) :
-    txt = txt.replace( "H5FILE", os.path.abspath(args.input) )
+elif isfile(args.input) and  re.search( '.h5ad$', args.input ) :
+    txt = txt.replace( "H5FILE", os.path.abspath(args.input), 1 )
 elif isfile(args.input) and re.search( '.loom$', args.input) :
-    txt = txt.replace( "LoomIN", os.path.abspath( args.input ) )
-else:
+    txt = txt.replace( "LoomIN", os.path.abspath( args.input ), 1 )
+elif isdir(args.input):
     ## read the whole folder and check
-    CR = find_CR_Path ( args.input )
+    ## go first for the h5 files
 
-    if len(CR) > 0:
-        CR = "\", \"".join(CR)
-        txt = txt.replace( "CELLRANGERDATA", CR )
+    H5 = find_loom_files( args.input, '.h5$' )
+    CR = find_CR_Path ( args.input )
+    print("H5: "+ "\", \"".join(str(v) for v in H5))
+    print("CR: "+ "\", \"".join(str(v) for v in CR))
+    print("len H5: "+ str(len(H5)) )
+    if len(H5) > 0:
+        H5 = "\", \"".join(str(v) for v in H5)
+        txt = txt.replace( "CELLRANGERH5", H5, 1 )
+    elif len(CR) > 0:
+        CR = "\", \"".join(str(v) for v in CR)
+        txt = txt.replace( "CELLRANGERDATA", CR, 1 )
     else:
-        MT = re.compile('.loom$')
-        LM = find_loom_files( args.input, MT )
-        if len(CR) > 0:
-            CR = "\", \"".join(CR)
-            txt = txt.replace( "LoomIN", CR )
+        LM = find_loom_files( args.input, '.loom$' )
+        if len(LM) > 0:
+            LM = "\", \"".join(str(v) for v in LM)
+            txt = txt.replace( "LoomIN", LM, 1 )
         else:
             print(f"\nNo infile could be detected there: {args.input}\n", file=sys.stderr)
             parser.print_help(sys.stderr)
             sys.exit()
 
 
-txt = txt.replace( "OUTFILE", args.name )
-txt = txt.replace( "KEY_ADDED", args.statsName )
-txt = txt.replace( "DIMENSIONS", args.dimensions )
+txt = txt.replace( "OUTFILE", args.name , 1)
+txt = txt.replace( "KEY_ADDED", args.statsName , 1)
+txt = txt.replace( "\"DIMENSIONS\"", args.dimensions, 1 )
 
-txt = txt.replace( "\"MTEXCLUDE\"", str(args.mitoEX) )
-txt = txt.replace( "\"RPEXCLUDE\"", str(args.riboEX) )
+txt = txt.replace( "\"MTEXCLUDE\"", str(args.mitoEX), 1 )
+txt = txt.replace( "\"RPEXCLUDE\"", str(args.riboEX), 1 )
 
 if not exists( args.outpath ):
     makedirs(  args.outpath )
@@ -170,6 +174,7 @@ jupyter = f"{args.outpath}/{args.name}.ipynb"
 #f"jupytext --to notebook {ofile}"
 
 if not args.test:
+    os.system(f"jupytext --to notebook {ofile}")
     os.system(f"jupytext --set-kernel python3 {ofile}")
     os.system(f"jupytext --to notebook --execute {ofile}")
 # name -> "OUTFILE.h5ad"

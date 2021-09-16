@@ -22,6 +22,7 @@ Make it scriptable - Input either h5ad, loom or CellRanger out files.
 
 ```python
 CellRangerIn = [ "CELLRANGERDATA" ]
+CellRangerH5 = [ "CELLRANGERH5" ]
 LoomIn = [ "LoomIN" ]
 h5file = "H5FILE"
 
@@ -73,6 +74,19 @@ if not CellRangerIn[0] == "CELLRANGERDATA":
     adata.var_names_make_unique()
     adata
 ```
+
+```python
+if not CellRangerH5[0] == "CELLRANGERH5":
+    print("reading CellRanger H5 file(s)")
+    adata = scanpy.read_10x_h5( CellRangerH5[0] )
+    if len(CellRangerH5) > 1:
+        for i in range(1,len(CellRangerH5)):
+            tmp = scanpy.read_10x_h5( CellRangerH5[i] )
+            adata = adata0.concatenate(adata, tmp, batch_key='sample')
+    adata.var_names_make_unique()
+    adata
+```
+
 
 ```python
 if not LoomIn[0] == "LoomIN":
@@ -135,7 +149,7 @@ df
 ```
 
 ```python
-RP = re.compile('^RP[SL]')
+RP = re.compile('^R[pP][SsLl]')
 def testRP(x):
     r= True
     if RP.match(x):
@@ -143,17 +157,19 @@ def testRP(x):
     return (r)
 RPgenes = [ x  for x in adata.var.index if not testRP(x)]
 #print ( Counter(RPgenes) )
-adata.obs['RP[LS]sum'] = adata[:,RPgenes].X.sum(axis=1)
-
-if not RPexclude == "RPEXCLUDE":
+if  len(RPgenes) > 0:
+    adata.obs['RP[LS]sum'] = adata[:,RPgenes].X.sum(axis=1)
+else:
+    adata.obs['RP[LS]sum'] = 0
+if not RPexclude == "RPEXCLUDE" and len(RPgenes) > 0:
     OK = [ testRP(x) for x in adata.var.index ]
+    print(Counter(OK))
     adata._inplace_subset_var( np.array(OK) )
     adata
-    
 ```
 
 ```python
-MT = re.compile('^MT-')
+MT = re.compile('^M[Tt]-')
 def testMT(x):
     r= True
     if MT.match(x):
@@ -161,7 +177,10 @@ def testMT(x):
     return (r)
 MTgenes = [ x  for x in adata.var.index if not testMT(x)]
 #print ( Counter(RPgenes) )
-adata.obs['MTsum'] = adata[:,MTgenes].X.sum(axis=1)
+if len(MTgenes) > 0:
+    adata.obs['MTsum'] = adata[:,MTgenes].X.sum(axis=1)
+else:
+    adata.obs['MTsum'] = 0
 
 if not MTexclude == "MTEXCLUDE":
     OK = [ testMT(x) for x in adata.var.index ]
