@@ -69,7 +69,7 @@ if not CellRangerIn[0] == "CELLRANGERDATA":
     if len(CellRangerIn) > 1:
         for i in range(1,len(CellRangerIn)):
             tmp = scanpy.read_10x_mtx( CellRangerIn[i] )
-            adata = adata0.concatenate(adata, tmp, batch_key='sample')
+            adata = adata.concatenate( tmp, batch_key='sample')
     adata.var_names_make_unique()
     adata
 ```
@@ -81,7 +81,7 @@ if not LoomIn[0] == "LoomIN":
     if len(CellRangerIn) > 1:
         for i in range(1,len(LoomIn)):
             tmp = scanpy.read_10x_mtx( LoomIn[i] )
-            adata = adata0.concatenate(adata, tmp, batch_key='sample')
+            adata = adata.concatenate( tmp, batch_key='sample')
     adata.var_names_make_unique()
     adata
 ```
