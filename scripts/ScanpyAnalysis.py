@@ -106,7 +106,9 @@ def find_CR_Path( path ):
         if f == "filtered_feature_bc_matrix" and checkPath(join(path, f)):
             ret.append( os.path.abspath( join( path,f) ) )
         elif checkPath(join(path, f)):
-            ret.append( find_CR_Path( join(path,f) ) )
+            tmp = find_CR_Path( join(path,f) )
+            if len(tmp) > 0:
+                ret.append( tmp )
     return (ret)
 
 def find_loom_files( path, pattern ):
