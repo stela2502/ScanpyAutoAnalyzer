@@ -117,7 +117,7 @@ if adata is None:
 ```
 
 ```python
-sampleID = [ str(cellID[-1]) for cellID in adata.obs.index._values ]
+sampleID = [re.sub("[AGCT]*-", "", x) for x in adata.obs.index._values ]
 Counter(sampleID)
 ```
 
