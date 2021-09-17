@@ -1,7 +1,7 @@
 #!python
 
 import argparse, textwrap
-import ScanpyAutoAnalyzer as AA
+import ScanpyAutoAnalyzer.IO as AA
 
 from pathlib import Path
 import sys
