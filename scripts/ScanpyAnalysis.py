@@ -102,6 +102,7 @@ def checkPath(path):
 def find_CR_Path( path ):
     paths = listdir(path)
     ret = [ ]
+    tmp = None
     for f in paths:
         #print(f + " ispath? "+ str( checkPath(join(path, f)) ) )
         if f == "filtered_feature_bc_matrix" and checkPath(join(path, f)):
@@ -109,7 +110,8 @@ def find_CR_Path( path ):
         elif checkPath(join(path, f)):
             tmp = find_CR_Path( join(path,f) )
             if len(tmp) > 0:
-                ret.append( tmp )
+                for i in range(len(tmp)):
+                   ret.append( tmp[i] )
     return (np.array(ret).flatten())
 
 def find_loom_files( path, pattern ):
@@ -121,7 +123,8 @@ def find_loom_files( path, pattern ):
         elif checkPath(join(path, f)):
             tmp = find_loom_files( join(path,f), pattern )
             if (  len(tmp) >0 ):
-                ret.append( tmp )    
+                for i in range(len(tmp)):
+                   ret.append( tmp[i] )    
     return (np.array(ret).flatten())
 
 if not exists(args.input):
