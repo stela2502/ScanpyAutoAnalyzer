@@ -109,7 +109,7 @@ def find_CR_Path( path ):
             tmp = find_CR_Path( join(path,f) )
             if len(tmp) > 0:
                 ret.append( tmp )
-    return (ret)
+    return (np.array(ret).flatten())
 
 def find_loom_files( path, pattern ):
     paths = listdir(path)
@@ -121,7 +121,7 @@ def find_loom_files( path, pattern ):
             tmp = find_loom_files( join(path,f), pattern )
             if (  len(tmp) >0 ):
                 ret.append( tmp )    
-    return (ret)
+    return (np.array(ret).flatten())
 
 if not exists(args.input):
     print(f"\ninput is not a path or file: {args.input}\n", file=sys.stderr)
