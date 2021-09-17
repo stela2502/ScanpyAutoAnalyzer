@@ -10,7 +10,6 @@ from os import listdir, makedirs
 from os.path import isfile, join, isdir, exists
 import pkg_resources
 import numpy as np
-
 import os
 
 libFile = pkg_resources.resource_filename('ScanpyAutoAnalyzer',join( 'data', 'ExampleAnalysis.md' ))
