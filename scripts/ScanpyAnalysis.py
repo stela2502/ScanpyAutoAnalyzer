@@ -1,6 +1,8 @@
 #!python
 
 import argparse, textwrap
+import ScanpyAutoAnalyzer as AA
+
 from pathlib import Path
 import sys
 import re
@@ -90,43 +92,6 @@ if problems:
 # a list of loom files -> "loomIN"
 # a path with filtered_feature_bc_matrix subfolders
 
-def checkPath(path):
-    OK = None
-    try:
-        OK = not isfile( path )
-    except err:
-        print( "got an error from isdir!")
-        pass
-    return ( OK )
-
-def find_CR_Path( path ):
-    paths = listdir(path)
-    ret = [ ]
-    tmp = None
-    for f in paths:
-        #print(f + " ispath? "+ str( checkPath(join(path, f)) ) )
-        if f == "filtered_feature_bc_matrix" and checkPath(join(path, f)):
-            ret.append( os.path.abspath( join( path,f) ) )
-        elif checkPath(join(path, f)):
-            tmp = find_CR_Path( join(path,f) )
-            if len(tmp) > 0:
-                for i in range(len(tmp)):
-                   ret.append( tmp[i] )
-    return (np.array(ret).flatten())
-
-def find_loom_files( path, pattern ):
-    paths = listdir(path)
-    ret = []
-    for f in paths:
-        if re.search(pattern, f ):
-            ret.append( os.path.abspath( join( path,f) ) )
-        elif checkPath(join(path, f)):
-            tmp = find_loom_files( join(path,f), pattern )
-            if (  len(tmp) >0 ):
-                for i in range(len(tmp)):
-                   ret.append( tmp[i] )    
-    return (np.array(ret).flatten())
-
 if not exists(args.input):
     print(f"\ninput is not a path or file: {args.input}\n", file=sys.stderr)
     parser.print_help(sys.stderr)
@@ -139,8 +104,8 @@ elif isdir(args.input):
     ## read the whole folder and check
     ## go first for the h5 files
 
-    H5 = find_loom_files( args.input, '.h5$' )
-    CR = find_CR_Path ( args.input )
+    H5 = AA.find_files( args.input, '.h5$' )
+    CR = AA.find_path ( args.input )
     print("H5: "+ "\", \"".join(str(v) for v in H5))
     print("CR: "+ "\", \"".join(str(v) for v in CR))
     print("len H5: "+ str(len(H5)) )
