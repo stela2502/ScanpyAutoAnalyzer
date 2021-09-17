@@ -7,6 +7,7 @@ import re
 from os import listdir, makedirs
 from os.path import isfile, join, isdir, exists
 import pkg_resources
+import numpy as np
 
 import os
 
