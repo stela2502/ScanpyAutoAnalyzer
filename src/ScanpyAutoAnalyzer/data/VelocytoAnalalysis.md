@@ -236,13 +236,19 @@ adata
 ```
 
 ```python
-#scv.pp.moments(adata, n_pcs=30, n_neighbors=30)
-scanpy.pp.neighbors(adata, n_neighbors=30)
+scv.pp.moments(adata, n_pcs=30, n_neighbors=30)
+#scanpy.pp.neighbors(adata, n_neighbors=30)
 if dimensions == "DIMENSIONS":
     dimensions = 2
 scanpy.tl.umap(adata,n_components= dimensions)
 scanpy.tl.louvain(adata)
 ```
+
+``` python
+scv.tl.recover_dynamics(adata)
+scv.tl.velocity(adata, mode='dynamical')
+scv.tl.velocity_graph(adata)
+scv.tl.velocity_embedding(adata, basis='umap', color='louvain' )
 
 ```python
 scv.pl.scatter(adata, color='sampleID', figsize =(15,12), legend_loc='right margin')
@@ -323,6 +329,7 @@ Makes it way more easy to see where the grooups of interest/problem are.
 for ID in Counter(sampleID).keys():
     tmp = adata[adata.obs['sampleID'].isin([ID])]
     scv.pl.scatter(tmp,color=['louvain'], figsize =(14,10), legend_loc='right margin', title=f"sampleID {ID}")
+    
 ```
 
 ```python
