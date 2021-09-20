@@ -1,6 +1,6 @@
 # ScanpyAutoAnalyzer
 
-ScanpyAutoAnalyzer is a simple Python package that provides scripts, which use jupyter notebooks and the jupytext package to autonaticly run analysis scripts.
+ScanpyAutoAnalyzer is a simple Python package that provides scripts, which use jupyter notebooks and the jupytext package to run analysis scripts in an automized way.
 
 The final idea behind this package is that I have now used the same script to analyze the first steps of a single cell 10X experiment four times.
 And this analysis has always given publication ready results. 
@@ -13,13 +13,13 @@ As I expect to run more analyes in the future - way more - I am planning to auto
 # Aurora users
 
 This library is installed in the singularity image SingSingCell/1.1 on aurora-ls2.
-To use this I at the moment use command lines like this:
+To use this I use command lines like this at the moment:
 
 ```
 singularity exec -B/projects:/projects -B/local:/mnt /projects/fs1/common/software/SingSingCell/1.1/SingleCells_v1.1.sif ScanpyAnalysis.py  -i /projects/fs3/stefanl/YangLiu/GSE150774 -r -m -o /projects/fs3/stefanl/YangLiu/GSE150774/GSE150774_AutoAnalysis -n NoRiboNoMito
 ```
 
-This script at the moment still runs on the frontend, but can easily be moved to the blades by putting this command line into a sbatch script.
+This script runs on the frontend, but can easily be moved to the blades by putting this command line into a sbatch script (untested).
 
 ## more info
 
@@ -34,6 +34,8 @@ And run the command
 ```
 ScanpyAnalysis.py  -i /projects/fs3/stefanl/YangLiu/GSE150774 -r -m -o /projects/fs3/stefanl/YangLiu/GSE150774/GSE150774_AutoAnalysis -n NoRiboNoMito
 ```
+
+Especially important is to mount the /projects folder in the singularity image and use absolute paths for in- and out-put info.
 
 
 Help for this one script:
@@ -64,6 +66,9 @@ optional arguments:
                         list of genes of interest (will be plotted on the data)
   -t, --test            do not run the script
 ```
+
+
+The script uses <a href="https://github.com/stela2502/ScanpyAutoAnalyzer/blob/main/src/ScanpyAutoAnalyzer/data/ExampleAnalysis.md">this Markdown document</a> to run the analysis.
 
 
 I hope you use this!
