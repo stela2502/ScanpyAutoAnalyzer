@@ -103,15 +103,22 @@ elif isdir(args.input):
     ## read the whole folder and check
     ## go first for the h5 files
 
-    H5 = AA.find_files( args.input, '.h5$' )
+    #H5 = AA.find_files( args.input, '.h5$' )
     CR = AA.find_path ( args.input )
-    print("H5: "+ "\", \"".join(str(v) for v in H5))
+    #print("H5: "+ "\", \"".join(str(v) for v in H5))
     print("CR: "+ "\", \"".join(str(v) for v in CR))
     print("len H5: "+ str(len(H5)) )
-    if len(H5) > 0:
-        H5 = "\", \"".join(str(v) for v in H5)
-        txt = txt.replace( "CELLRANGERH5", H5, 1 )
-    elif len(CR) > 0:
+    #if len(H5) > 0:
+    #    H5 = "\", \"".join(str(v) for v in H5)
+    #    txt = txt.replace( "CELLRANGERH5", H5, 1 )
+    if len(CR) > 0:
+        ## EPIC CRAP - get rid of outs/filtered...
+        def rem(path):
+            P = Path( path )
+            P.pop()
+            P.pop()
+            return (join(P))
+        CR = [ rem(p) for p in CR ]
         CR = "\", \"".join(str(v) for v in CR)
         txt = txt.replace( "CELLRANGERDATA", CR, 1 )
     else:

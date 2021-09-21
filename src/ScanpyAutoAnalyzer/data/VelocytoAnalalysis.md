@@ -66,35 +66,18 @@ from shutil import rmtree
 ```python
 if not CellRangerIn[0] == "CELLRANGERDATA":
     print("reading CellRanger matrix file(s)")
-    adata = scanpy.read_10x_mtx( CellRangerIn[0] )
-    if len(CellRangerIn) > 1:
-        for i in range(1,len(CellRangerIn)):
-            tmp = scanpy.read_10x_mtx( CellRangerIn[i] )
-            adata = adata.concatenate( tmp, batch_key='sample')
-    adata.var_names_make_unique()
-    adata
-```
-
-```python
-if not CellRangerH5[0] == "CELLRANGERH5":
-    print("reading CellRanger H5 file(s)")
-    adata = scanpy.read_10x_h5( CellRangerH5[0] )
-    if len(CellRangerH5) > 1:
-        for i in range(1,len(CellRangerH5)):
-            tmp = scanpy.read_10x_h5( CellRangerH5[i] )
-            adata = adata.concatenate( tmp, batch_key='sample')
-    adata.var_names_make_unique()
-    adata
+    ## convert to loom file
+    LoomIN = [loompy.create_from_cellranger(file, '.') for file in CR]
 ```
 
 
 ```python
 if not LoomIn[0] == "LoomIN":
     print("reading loom file(s)")
-    adata = scvelo.read_loom( LoomIn[0] )
+    adata = scv.read_loom( LoomIn[0] )
     if len(CellRangerIn) > 1:
         for i in range(1,len(LoomIn)):
-            tmp = scanpy.read_10x_mtx( LoomIn[i] )
+            tmp = scv.read_loom( LoomIn[i] )
             adata = adata.concatenate( tmp, batch_key='sample')
     adata.var_names_make_unique()
     adata
@@ -103,7 +86,7 @@ if not LoomIn[0] == "LoomIN":
 ```python
 if not h5file == "H5FILE":
     print("reading h5 anndata file")
-    adata = scanpy.read( h5file )
+    adata = scv.read( h5file )
     adata.var_names_make_unique()
     adata
 ```

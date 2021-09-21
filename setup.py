@@ -22,7 +22,7 @@ setuptools.setup(
     ],
     scripts= [ 
         'scripts/ScanpyAnalysis.py',
-        'VelocityAnalysis.py'
+        'scripts/VelocytoAnalalysis.py'
      ],
     package_dir={"ScanpyAutoAnalyzer": "src/ScanpyAutoAnalyzer"},
     package_data={"ScanpyAutoAnalyzer": ["data/ExampleAnalysis.md"] },
