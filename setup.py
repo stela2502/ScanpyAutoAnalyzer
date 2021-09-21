@@ -20,7 +20,10 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    scripts= [ 'scripts/ScanpyAnalysis.py' ],
+    scripts= [ 
+        'scripts/ScanpyAnalysis.py',
+        'VelocityAnalysis.py'
+     ],
     package_dir={"ScanpyAutoAnalyzer": "src/ScanpyAutoAnalyzer"},
     package_data={"ScanpyAutoAnalyzer": ["data/ExampleAnalysis.md"] },
     packages=setuptools.find_packages(where="src"),
