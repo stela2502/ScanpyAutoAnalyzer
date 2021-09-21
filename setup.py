@@ -25,7 +25,11 @@ setuptools.setup(
         'scripts/VelocytoAnalalysis.py'
      ],
     package_dir={"ScanpyAutoAnalyzer": "src/ScanpyAutoAnalyzer"},
-    package_data={"ScanpyAutoAnalyzer": ["data/ExampleAnalysis.md"] },
+    package_data={"ScanpyAutoAnalyzer": [
+        "data/ExampleAnalysis.md",
+        "data/VelocytoAnalalysis.md"
+        ] 
+    },
     packages=setuptools.find_packages(where="src"),
     python_requires=">=3.6",
 )
