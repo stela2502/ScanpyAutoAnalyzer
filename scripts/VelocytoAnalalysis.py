@@ -113,11 +113,10 @@ elif isdir(args.input):
     #    txt = txt.replace( "CELLRANGERH5", H5, 1 )
     if len(CR) > 0:
         ## EPIC CRAP - get rid of outs/filtered...
-        def rem(path):
-            P = [p for p in Path( path ).parts]
-            P.pop()
-            P.pop()
-            return (join(P))
+        def rem(p):
+            p = os.path.split(p)[0]
+            p = os.path.split(p)[0]
+            return ( p )
         CR = [ rem(p) for p in CR ]
         CR = "\", \"".join(str(v) for v in CR)
         txt = txt.replace( "CELLRANGERDATA", CR, 1 )
