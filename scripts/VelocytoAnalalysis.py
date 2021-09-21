@@ -107,7 +107,7 @@ elif isdir(args.input):
     CR = AA.find_path ( args.input )
     #print("H5: "+ "\", \"".join(str(v) for v in H5))
     print("CR: "+ "\", \"".join(str(v) for v in CR))
-    print("len H5: "+ str(len(H5)) )
+    #print("len H5: "+ str(len(H5)) )
     #if len(H5) > 0:
     #    H5 = "\", \"".join(str(v) for v in H5)
     #    txt = txt.replace( "CELLRANGERH5", H5, 1 )
