@@ -12,7 +12,7 @@ import pkg_resources
 import numpy as np
 import os
 
-libFile = pkg_resources.resource_filename('ScanpyAutoAnalyzer',join( 'data', 'VelocityAnalysis.md' ))
+libFile = pkg_resources.resource_filename('ScanpyAutoAnalyzer',join( 'data', 'VelocytoAnalalysis.md' ))
 
 # Initiate the parser
 parser = argparse.ArgumentParser(description=textwrap.dedent('''\
