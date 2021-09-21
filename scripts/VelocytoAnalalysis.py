@@ -114,7 +114,7 @@ elif isdir(args.input):
     if len(CR) > 0:
         ## EPIC CRAP - get rid of outs/filtered...
         def rem(path):
-            P = Path( path ).parts
+            P = [p for p in Path( path ).parts]
             P.pop()
             P.pop()
             return (join(P))
