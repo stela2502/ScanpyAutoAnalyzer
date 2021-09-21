@@ -75,7 +75,7 @@ if not CellRangerIn[0] == "CELLRANGERDATA":
 if not LoomIn[0] == "LoomIN":
     print("reading loom file(s)")
     adata = scv.read_loom( LoomIn[0] )
-    if len(CellRangerIn) > 1:
+    if len(LoomIn) > 1:
         for i in range(1,len(LoomIn)):
             tmp = scv.read_loom( LoomIn[i] )
             adata = adata.concatenate( tmp, batch_key='sample')
