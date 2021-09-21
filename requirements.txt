@@ -1,0 +1,8 @@
+pandas>=1.2.4
+numpy>=1.17.4
+scanpy>=1.7.2
+loompy>=3.0.6
+scvelo>=0.2.3
+jupytext>=1.12.0
+phate>=1.0.7
+python_igraph>=0.9.6
