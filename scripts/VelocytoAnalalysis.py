@@ -104,27 +104,28 @@ elif isdir(args.input):
     ## go first for the h5 files
 
     #H5 = AA.find_files( args.input, '.h5$' )
-    CR = AA.find_path ( args.input )
-    #print("H5: "+ "\", \"".join(str(v) for v in H5))
-    print("CR: "+ "\", \"".join(str(v) for v in CR))
     #print("len H5: "+ str(len(H5)) )
     #if len(H5) > 0:
     #    H5 = "\", \"".join(str(v) for v in H5)
     #    txt = txt.replace( "CELLRANGERH5", H5, 1 )
-    if len(CR) > 0:
-        ## EPIC CRAP - get rid of outs/filtered...
-        def rem(p):
-            p = os.path.split(p)[0]
-            p = os.path.split(p)[0]
-            return ( p )
-        CR = [ rem(p) for p in CR ]
-        CR = "\", \"".join(str(v) for v in CR)
-        txt = txt.replace( "CELLRANGERDATA", CR, 1 )
+    LM = find_loom_files( args.input, '.loom$' )
+    if len(LM) > 0:
+        LM = "\", \"".join(str(v) for v in LM)
+        txt = txt.replace( "LoomIN", LM, 1 )
     else:
-        LM = find_loom_files( args.input, '.loom$' )
-        if len(LM) > 0:
-            LM = "\", \"".join(str(v) for v in LM)
-            txt = txt.replace( "LoomIN", LM, 1 )
+        ## EPIC CRAP - get rid of outs/filtered...
+        CR = AA.find_path ( args.input )
+        #print("H5: "+ "\", \"".join(str(v) for v in H5))
+        print("CR: "+ "\", \"".join(str(v) for v in CR))
+        if  len(CR) > 0:
+            print(f"\nCellRanger output is not supported here: {args.input}\n", file=sys.stderr)
+            def rem(p):
+                p = os.path.split(p)[0]
+                p = os.path.split(p)[0]
+                return ( p )
+            CR = [ rem(p) for p in CR ]
+            CR = "\", \"".join(str(v) for v in CR)
+            txt = txt.replace( "CELLRANGERDATA", CR, 1 )
         else:
             print(f"\nNo infile could be detected there: {args.input}\n", file=sys.stderr)
             parser.print_help(sys.stderr)
