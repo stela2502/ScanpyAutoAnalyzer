@@ -67,6 +67,7 @@ from shutil import rmtree
 if not CellRangerIn[0] == "CELLRANGERDATA":
     print("reading CellRanger matrix file(s)")
     ## convert to loom file
+    stop("CellRanger output not supported here")
     LoomIN = [loompy.create_from_cellranger(file, '.') for file in CellRangerIn]
 ```
 

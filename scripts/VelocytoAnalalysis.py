@@ -104,15 +104,19 @@ elif isdir(args.input):
     ## go first for the h5 files
 
     #H5 = AA.find_files( args.input, '.h5$' )
-    CR = AA.find_path ( args.input )
-    #print("H5: "+ "\", \"".join(str(v) for v in H5))
-    print("CR: "+ "\", \"".join(str(v) for v in CR))
     #print("len H5: "+ str(len(H5)) )
     #if len(H5) > 0:
     #    H5 = "\", \"".join(str(v) for v in H5)
     #    txt = txt.replace( "CELLRANGERH5", H5, 1 )
+    LM = AA.find_files( args.input, '.loom$' )
+    if len(LM) > 0:
+        LM = "\", \"".join(str(v) for v in LM)
+        txt = txt.replace( "LoomIN", LM, 1 )
     if len(CR) > 0:
         ## EPIC CRAP - get rid of outs/filtered...
+        print(f"\nCellRanger oiutoput is not supported - use kallisto/bustools: {args.input}\n", file=sys.stderr)
+        parser.print_help(sys.stderr)
+        sys.exit()
         def rem(p):
             p = os.path.split(p)[0]
             p = os.path.split(p)[0]
@@ -121,10 +125,6 @@ elif isdir(args.input):
         CR = "\", \"".join(str(v) for v in CR)
         txt = txt.replace( "CELLRANGERDATA", CR, 1 )
     else:
-        LM = AA.find_files( args.input, '.loom$' )
-        if len(LM) > 0:
-            LM = "\", \"".join(str(v) for v in LM)
-            txt = txt.replace( "LoomIN", LM, 1 )
         else:
             print(f"\nNo infile could be detected there: {args.input}\n", file=sys.stderr)
             parser.print_help(sys.stderr)
