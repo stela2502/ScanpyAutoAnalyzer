@@ -119,6 +119,8 @@ elif isdir(args.input):
         print("CR: "+ "\", \"".join(str(v) for v in CR))
         if  len(CR) > 0:
             print(f"\nCellRanger output is not supported here: {args.input}\n", file=sys.stderr)
+            parser.print_help(sys.stderr)
+            sys.exit()
             def rem(p):
                 p = os.path.split(p)[0]
                 p = os.path.split(p)[0]
