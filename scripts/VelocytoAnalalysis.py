@@ -121,7 +121,7 @@ elif isdir(args.input):
         CR = "\", \"".join(str(v) for v in CR)
         txt = txt.replace( "CELLRANGERDATA", CR, 1 )
     else:
-        LM = find_loom_files( args.input, '.loom$' )
+        LM = AA.find_files( args.input, '.loom$' )
         if len(LM) > 0:
             LM = "\", \"".join(str(v) for v in LM)
             txt = txt.replace( "LoomIN", LM, 1 )
