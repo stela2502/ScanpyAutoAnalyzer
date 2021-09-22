@@ -72,12 +72,17 @@ if not CellRangerIn[0] == "CELLRANGERDATA":
 
 
 ```python
-if not LoomIn[0] == "LoomIN":
+if not LoomIN[0] == "LoomIN":
     print("reading loom file(s)")
-    adata = scv.read_loom( LoomIn[0] )
-    if len(LoomIn) > 1:
-        for i in range(1,len(LoomIn)):
-            tmp = scv.read_loom( LoomIn[i] )
+    adata = scv.read_loom( LoomIN[0] )
+    adata.obs.index = [ txt+"0" for txt in adata.obs.index.tolist()]
+    adata.var_names_make_unique()
+    if len(LoomIN) > 1:
+        print (str(i)+":")
+        for i in range(1,len(LoomIN)):
+            tmp = scv.read_loom( LoomIN[i] )
+            tmp.obs.index = [ txt+str(i) for txt in tmp.obs.index.tolist()]
+            tmp.var_names_make_unique()
             adata = adata.concatenate( tmp, batch_key='sample')
     adata.var_names_make_unique()
     adata
