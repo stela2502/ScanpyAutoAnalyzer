@@ -109,6 +109,7 @@ elif isdir(args.input):
     #    H5 = "\", \"".join(str(v) for v in H5)
     #    txt = txt.replace( "CELLRANGERH5", H5, 1 )
     LM = AA.find_files( args.input, '.loom$' )
+    CR = AA.find_path ( args.input )
     if len(LM) > 0:
         LM = "\", \"".join(str(v) for v in LM)
         txt = txt.replace( "LoomIN", LM, 1 )
