@@ -125,10 +125,9 @@ elif isdir(args.input):
         CR = "\", \"".join(str(v) for v in CR)
         txt = txt.replace( "CELLRANGERDATA", CR, 1 )
     else:
-        else:
-            print(f"\nNo infile could be detected there: {args.input}\n", file=sys.stderr)
-            parser.print_help(sys.stderr)
-            sys.exit()
+        print(f"\nNo infile could be detected there: {args.input}\n", file=sys.stderr)
+        parser.print_help(sys.stderr)
+        sys.exit()
 
 
 txt = txt.replace( "OUTFILE", args.name , 1)
