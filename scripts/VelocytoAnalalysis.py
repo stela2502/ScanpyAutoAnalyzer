@@ -109,11 +109,12 @@ elif isdir(args.input):
     #    H5 = "\", \"".join(str(v) for v in H5)
     #    txt = txt.replace( "CELLRANGERH5", H5, 1 )
     LM = AA.find_files( args.input, '.loom$' )
+    print("len LM: "+ str(len(LM)) )
     CR = AA.find_path ( args.input )
     if len(LM) > 0:
         LM = "\", \"".join(str(v) for v in LM)
         txt = txt.replace( "LoomIN", LM, 1 )
-    if len(CR) > 0:
+    elif len(CR) > 0:
         ## EPIC CRAP - get rid of outs/filtered...
         print(f"\nCellRanger oiutoput is not supported - use kallisto/bustools: {args.input}\n", file=sys.stderr)
         parser.print_help(sys.stderr)
