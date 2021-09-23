@@ -23,7 +23,7 @@ Make it scriptable - Input either h5ad, loom or CellRanger out files.
 ```python
 CellRangerIn = [ "CELLRANGERDATA" ]
 CellRangerH5 = [ "CELLRANGERH5" ]
-LoomIn = [ "LoomIN" ]
+LoomIn = [ "LoomIn" ]
 h5file = "H5FILE"
 
 ```
@@ -68,20 +68,20 @@ if not CellRangerIn[0] == "CELLRANGERDATA":
     print("reading CellRanger matrix file(s)")
     ## convert to loom file
     stop("CellRanger output not supported here")
-    LoomIN = [loompy.create_from_cellranger(file, '.') for file in CellRangerIn]
+    LoomIn = [loompy.create_from_cellranger(file, '.') for file in CellRangerIn]
 ```
 
 
 ```python
-if not LoomIN[0] == "LoomIN":
+if not LoomIn[0] == "LoomIn":
     print("reading loom file(s)")
-    adata = scv.read_loom( LoomIN[0] )
+    adata = scv.read_loom( LoomIn[0] )
     adata.obs.index = [ txt+"0" for txt in adata.obs.index.tolist()]
     adata.var_names_make_unique()
-    if len(LoomIN) > 1:
+    if len(LoomIn) > 1:
         print (str(i)+":")
-        for i in range(1,len(LoomIN)):
-            tmp = scv.read_loom( LoomIN[i] )
+        for i in range(1,len(LoomIn)):
+            tmp = scv.read_loom( LoomIn[i] )
             tmp.obs.index = [ txt+str(i) for txt in tmp.obs.index.tolist()]
             tmp.var_names_make_unique()
             adata = adata.concatenate( tmp, batch_key='sample')
