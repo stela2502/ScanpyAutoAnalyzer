@@ -75,18 +75,10 @@ if not CellRangerIn[0] == "CELLRANGERDATA":
 ```python
 if not LoomIn[0] == "LoomIn":
     print("reading loom file(s)")
-    adata = scv.read_loom( LoomIn[0] )
-    adata.obs.index = [ txt+"0" for txt in adata.obs.index.tolist()]
-    adata.var_names_make_unique()
     if len(LoomIn) > 1:
-        print (str(i)+":")
-        for i in range(1,len(LoomIn)):
-            tmp = scv.read_loom( LoomIn[i] )
-            tmp.obs.index = [ txt+str(i) for txt in tmp.obs.index.tolist()]
-            tmp.var_names_make_unique()
-            adata = adata.concatenate( tmp, batch_key='sample')
+        loompy.combine( files= LoomIn, output_file="combined.loom" join( ))
+    adata = scv.read_loom( "combined.loom" )
     adata.var_names_make_unique()
-    adata
 ```
 
 ```python
@@ -94,7 +86,6 @@ if not h5file == "H5FILE":
     print("reading h5 anndata file")
     adata = scv.read( h5file )
     adata.var_names_make_unique()
-    adata
 ```
 
 ```python
