@@ -23,7 +23,7 @@ Make it scriptable - Input either h5ad, loom or CellRanger out files.
 ```python
 CellRangerIn = [ "CELLRANGERDATA" ]
 CellRangerH5 = [ "CELLRANGERH5" ]
-LoomIn = [ "LoomIn" ]
+LoomIn = [ "LoomIN" ]
 h5file = "H5FILE"
 
 ```
@@ -73,10 +73,10 @@ if not CellRangerIn[0] == "CELLRANGERDATA":
 
 
 ```python
-if not LoomIn[0] == "LoomIn":
+if not LoomIn[0] == "LoomIN":
     print("reading loom file(s)")
-    if len(LoomIn) > 1:
-        loompy.combine( files= LoomIn, output_file="combined.loom" join( ))
+    if len(LoomIn) > 1 and not os.path.exists("combined.loom"):
+        loompy.combine( files= LoomIn, output_file="combined.loom" )
     adata = scv.read_loom( "combined.loom" )
     adata.var_names_make_unique()
 ```
