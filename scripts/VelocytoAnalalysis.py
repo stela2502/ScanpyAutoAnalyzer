@@ -34,7 +34,7 @@ parser = argparse.ArgumentParser(description=textwrap.dedent('''\
 parser.add_argument("-i", "--input", help="the infile or in path")
 parser.add_argument("-o", "--outpath", help="the path where the outfiles should be stored")
 parser.add_argument("-n", "--name", help="the name of this analysis")
-parser.add_argument("-N", "--onNode", help="run this analysis using the slurm workload manager (not implemented!)")
+parser.add_argument("-N", "--onNode", help="run this analysis using the slurm workload manager (not implemented!)", action='store_true')
 
 # the analysis parameters
 
