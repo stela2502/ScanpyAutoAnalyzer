@@ -142,6 +142,8 @@ df = pd.DataFrame ( {
 })
 df.index = adata.obs.index
 adata.obs= df
+
+scanpy.pp.calculate_qc_metrics( adata, inplace=True)
 ```
 
 ```python
@@ -224,7 +226,7 @@ adata
 ```
 
 ```python
-scanpy.pp.filter_genes(adata, min_counts=10 )
+scanpy.pp.filter_genes(adata, min_counts=1 )
 adata
 ```
 

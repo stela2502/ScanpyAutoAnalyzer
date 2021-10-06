@@ -30,6 +30,9 @@ h5file = "H5FILE"
 
 ```python
 ofile = "OUTFILE.h5ad"
+subset = "OUTFILE_subset.h5ad"
+
+
 dimensions = "DIMENSIONS"
 
 ```
@@ -45,6 +48,10 @@ key_added = 'KEY_ADDED' ## stats table name and folder name!
 
 ```python
 GOIS = [ "GenesOfInterest" ]
+
+onNode = "ONNODE"
+
+ifile = "combined.loom"
 ```
 
 ```python
@@ -61,6 +68,35 @@ import subprocess
 from collections import Counter
 import numpy as np
 from shutil import rmtree
+
+import h5py
+from shutil import copyfile
+
+
+def copyFiles(files, to):
+    for f in files:
+        name = os.path.basename( f )
+        print( f"copy {f} to {to}" )
+        copyfile( f, os.path.join(to, name ) )
+    print( "all copied" )
+```
+
+
+```python
+if onNode:
+    if "origWD" not in locals():
+        origWD = os.getcwd()
+    print(f"origWD = {origWD}?" )
+    path = os.path.basename( os.environ["SNIC_TMP"] )
+    wd = f"/mnt/{path}/"
+    if not os.path.exists("combined.loom"):
+        copyFiles( LoomIn, wd )
+    else:
+        copyFiles( ["combined.loom"], wd )
+    print(os.environ["SNIC_TMP"])
+    print ( f"wd = '{wd}'" )
+
+    os.chdir( wd )
 ```
 
 ```python
@@ -74,11 +110,29 @@ if not CellRangerIn[0] == "CELLRANGERDATA":
 
 ```python
 if not LoomIn[0] == "LoomIN":
-    print("reading loom file(s)")
+    print ( "We have "+str(len(LoomIn))+" loom files here - merging" )
     if len(LoomIn) > 1 and not os.path.exists("combined.loom"):
-        loompy.combine( files= LoomIn, output_file="combined.loom" )
-    adata = scv.read_loom( "combined.loom" )
+        if not os.path.exists(os.path.basename(LoomIn[0])) :
+            copyFiles( LoomIn, './') ## as we are on the server here.
+        
+        loompy.combine( files= [os.path.basename( f ) for f in LoomIn], output_file="combined.loom" )
+    
+    ## This is sample specififc - but the data in this slot is crap!
+    ## I have added that here as it might happen more often.
+    h5 = h5py.File( "combined.loom" , mode="r+")
+    #h5['row_attrs']['Aliases'][()]
+    if 'Aliases' in h5['row_attrs'].keys():
+        del h5['row_attrs']['Aliases']
+    h5.close()
+    ## end of drop data...
+
+    print( "Loading (merged) loom file")
+    if len(LoomIn) == 1:
+        adata = scv.read( LoomIn[0] )
+    else:
+        adata = scv.read( "combined.loom" )
     adata.var_names_make_unique()
+    adata
 ```
 
 ```python
@@ -122,6 +176,8 @@ df = pd.DataFrame ( {
 })
 df.index = adata.obs.index
 adata.obs= df
+
+scanpy.pp.calculate_qc_metrics( adata, inplace=True)
 ```
 
 ```python
@@ -204,7 +260,7 @@ adata
 ```
 
 ```python
-scanpy.pp.filter_genes(adata, min_counts=10 )
+scanpy.pp.filter_genes(adata, min_counts=1 )
 adata
 ```
 
@@ -222,16 +278,6 @@ if dimensions == "DIMENSIONS":
     dimensions = 2
 scanpy.tl.umap(adata,n_components= dimensions)
 scanpy.tl.louvain(adata)
-```
-
-``` python
-scv.tl.recover_dynamics(adata)
-scv.tl.velocity(adata, mode='dynamical')
-scv.tl.velocity_graph(adata)
-scv.tl.velocity_embedding(adata, basis='umap', color='louvain' )
-
-```python
-scv.pl.scatter(adata, color='sampleID', figsize =(15,12), legend_loc='right margin')
 ```
 
 ```python
@@ -300,6 +346,19 @@ adata.write(ofile)
 print(ofile)
 ```
 
+# Copy files to the original working directory
+
+If we work on a calculation node...
+
+```python
+
+if onNode:
+    copyFiles( [os.path.join( key_added, f) for f in os.listdir( key_added ), ofile], origWD )
+
+```
+
+
+
 # It has helped tremendousely
 
 to plot the louvain clusters sample specific.
@@ -312,6 +371,41 @@ for ID in Counter(sampleID).keys():
     
 ```
 
+# The Velocity analysis
+
+Run this last as the analysis is using VERY much memory and hence can break eaier with more cells than the before calculations.
+We also only use the highly variable genes for this:
+
+```python
+scanpy.pp.highly_variable_genes(adata, n_top_genes=3000, subset=True )
+adata
+```
+
+
+``` python
+scv.tl.recover_dynamics(adata)
+scv.tl.velocity(adata, mode='dynamical')
+scv.tl.velocity_graph(adata)
+scv.tl.velocity_embedding(adata, basis='umap', color='louvain' )
+
+scv.pl.scatter(adata, color='sampleID', figsize =(15,12), legend_loc='right margin')
+adata
+```
+
+```python
+if os.path.exists(subset):
+    os.remove(subset)
+adata.write(subset)
+print(subset)
+```
+
 ```python
 scv.pl.velocity_embedding_stream( adata, basis='umap', color=['louvain'], figsize=c(15,12) )
+```
+
+```python
+
+if onNode:
+    copyFiles( [ ofile, subset ], origWD )
+
 ```

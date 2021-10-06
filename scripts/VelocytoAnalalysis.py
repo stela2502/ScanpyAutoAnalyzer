@@ -34,6 +34,7 @@ parser = argparse.ArgumentParser(description=textwrap.dedent('''\
 parser.add_argument("-i", "--input", help="the infile or in path")
 parser.add_argument("-o", "--outpath", help="the path where the outfiles should be stored")
 parser.add_argument("-n", "--name", help="the name of this analysis")
+parser.add_argument("-N", "--onNode", help="run this analysis using the slurm workload manager (not implemented!)")
 
 # the analysis parameters
 
@@ -115,10 +116,11 @@ elif isdir(args.input):
         LM = "\", \"".join(str(v) for v in LM)
         txt = txt.replace( "LoomIN", LM, 1 )
     elif len(CR) > 0:
-        ## EPIC CRAP - get rid of outs/filtered...
-        print(f"\nCellRanger oiutoput is not supported - use kallisto/bustools: {args.input}\n", file=sys.stderr)
+        print(f"\nCellRanger output is not supported - use kallisto/bustools: {args.input}\n", file=sys.stderr)
         parser.print_help(sys.stderr)
         sys.exit()
+
+        ## EPIC CRAP - get rid of outs/filtered...
         def rem(p):
             p = os.path.split(p)[0]
             p = os.path.split(p)[0]
@@ -138,6 +140,11 @@ txt = txt.replace( "\"DIMENSIONS\"", args.dimensions, 1 )
 
 txt = txt.replace( "\"MTEXCLUDE\"", str(args.mitoEX), 1 )
 txt = txt.replace( "\"RPEXCLUDE\"", str(args.riboEX), 1 )
+
+txt = txt.replace( "\"ONNODE\"", "False", 1 ) ## get rid of this line and activate the next if implemented
+#txt = txt.replace( "\"ONNODE\"", str(args.onNode), 1 )
+
+
 
 if not exists( args.outpath ):
     makedirs(  args.outpath )
