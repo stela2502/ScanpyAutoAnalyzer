@@ -313,5 +313,5 @@ for ID in Counter(sampleID).keys():
 ```
 
 ```python
-
+scv.pl.velocity_embedding_stream( adata, basis='umap', color=['louvain'], figsize=c(15,12) )
 ```
