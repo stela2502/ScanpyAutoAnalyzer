@@ -101,10 +101,19 @@ if onNode:
 
 ```python
 if not CellRangerIn[0] == "CELLRANGERDATA":
+
+    adata = 0
     print("reading CellRanger matrix file(s)")
-    ## convert to loom file
-    stop("CellRanger output not supported here")
-    LoomIn = [loompy.create_from_cellranger(file, '.') for file in CellRangerIn]
+
+    for file in CellRangerIn:
+        tmp = scanpy.read_10x_h5( filename=file, gex_only=False )
+        if adata == 0:
+            adata = tmp
+        else:
+            adata = adata.concatenate( tmp, join="outer" )
+
+    adata.var_names_make_unique()
+    adata
 ```
 
 

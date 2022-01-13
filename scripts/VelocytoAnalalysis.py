@@ -116,9 +116,9 @@ elif isdir(args.input):
         LM = "\", \"".join(str(v) for v in LM)
         txt = txt.replace( "LoomIN", LM, 1 )
     elif len(CR) > 0:
-        print(f"\nCellRanger output is not supported - use kallisto/bustools: {args.input}\n", file=sys.stderr)
-        parser.print_help(sys.stderr)
-        sys.exit()
+        #print(f"\nCellRanger output is not supported - use kallisto/bustools: {args.input}\n", file=sys.stderr)
+        #parser.print_help(sys.stderr)
+        #sys.exit()
 
         ## EPIC CRAP - get rid of outs/filtered...
         def rem(p):
