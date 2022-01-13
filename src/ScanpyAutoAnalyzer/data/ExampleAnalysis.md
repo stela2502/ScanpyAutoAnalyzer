@@ -45,6 +45,8 @@ key_added = 'KEY_ADDED' ## stats table name and folder name!
 
 ```python
 GOIS = [ "GenesOfInterest" ]
+
+onNode = "ONNODE"
 ```
 
 ```python
@@ -61,6 +63,17 @@ import subprocess
 from collections import Counter
 import numpy as np
 from shutil import rmtree
+
+import h5py
+from shutil import copyfile
+
+
+def copyFiles(files, to):
+    for f in files:
+        name = os.path.basename( f )
+        print( f"copy {f} to {to}" )
+        copyfile( f, os.path.join(to, name ) )
+    print( "all copied" )
 ```
 
 ```python
@@ -107,6 +120,28 @@ if not h5file == "H5FILE":
     adata.var_names_make_unique()
     adata
 ```
+
+```python
+if onNode:
+    if "origWD" not in locals():
+        origWD = os.getcwd()
+    print(f"origWD = {origWD}?" )
+    path = os.path.basename( os.environ["SNIC_TMP"] )
+    wd = f"/mnt/{path}/"
+    if not os.path.exists("combined.loom"):
+        copyFiles( LoomIn, wd )
+    else:
+        copyFiles( ["combined.loom"], wd )
+    print(os.environ["SNIC_TMP"])
+    print ( f"wd = '{wd}'" )
+
+    os.chdir( wd )
+```
+
+```python
+adata.write(ofile)
+```
+
 
 ```python
 try: adata
