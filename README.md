@@ -10,6 +10,17 @@ In addition the data made most of the time sense if analyzed with multiple pseud
 As I expect to run more analyes in the future - way more - I am planning to automize this script to ultimately become part of a nextflow pipeline. I plann to prepare this as a singularity image and hence instead of creating a simple script in my scope I plann to install this script globally.
 
 
+# Install
+
+I am no Python power user and therfore 'only' a small pip command to install from github:
+
+```
+pip install git+https://github.com/stela2502/ScanpyAutoAnalyzer
+```
+
+I am not using anaconda or anything like that, but I am using a Singularity image to capsulate this functionalite.
+The Singularity image is not documented - my bad - and "only" available for Aurora users at the time of this writing.
+
 # Aurora users
 
 This library is installed in the singularity image SingSingCell/1.1 on aurora-ls2.
