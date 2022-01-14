@@ -86,6 +86,8 @@ if problems:
     sys.exit()
 
 
+txt = txt.replace( "\"ONNODE\"", 'false', 1 )
+
 # input has three checks:
 # one h5ad file -> "H5FILE"
 # a list of loom files -> "loomIN"
