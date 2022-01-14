@@ -86,7 +86,7 @@ if problems:
     sys.exit()
 
 
-txt = txt.replace( "\"ONNODE\"", 'false', 1 )
+txt = txt.replace( "\"ONNODE\"", 'False', 1 )
 
 # input has three checks:
 # one h5ad file -> "H5FILE"
