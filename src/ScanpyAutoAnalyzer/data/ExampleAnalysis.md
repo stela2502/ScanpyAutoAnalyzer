@@ -77,6 +77,10 @@ def copyFiles(files, to):
 ```
 
 ```python
+print('\n'.join(f'{m.__name__}=={m.__version__}' for m in globals().values() if getattr(m, '__version__', None)))
+```
+
+```python
 if not CellRangerIn[0] == "CELLRANGERDATA":
     print("reading CellRanger matrix file(s)")
     adata = scanpy.read_10x_mtx( CellRangerIn[0] )
@@ -121,22 +125,6 @@ if not h5file == "H5FILE":
     adata
 ```
 
-```python
-if onNode:
-    if "origWD" not in locals():
-        origWD = os.getcwd()
-    print(f"origWD = {origWD}?" )
-    path = os.path.basename( os.environ["SNIC_TMP"] )
-    wd = f"/mnt/{path}/"
-    if not os.path.exists("combined.loom"):
-        copyFiles( LoomIn, wd )
-    else:
-        copyFiles( ["combined.loom"], wd )
-    print(os.environ["SNIC_TMP"])
-    print ( f"wd = '{wd}'" )
-
-    os.chdir( wd )
-```
 
 ```python
 adata.write(ofile)
