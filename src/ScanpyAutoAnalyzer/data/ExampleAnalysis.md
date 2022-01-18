@@ -63,6 +63,7 @@ import subprocess
 from collections import Counter
 import numpy as np
 from shutil import rmtree
+import os
 
 import h5py
 from shutil import copyfile
@@ -82,12 +83,22 @@ print('\n'.join(f'{m.__name__}=={m.__version__}' for m in globals().values() if 
 
 ```python
 if not CellRangerIn[0] == "CELLRANGERDATA":
+        def sname( path ):
+    path, fname = os.path.split(path)
+    file, sname = os.path.split(path)
+    return(sname)
+
+if not CellRangerIn[0] == "CELLRANGERDATA":
     print("reading CellRanger matrix file(s)")
     adata = scanpy.read_10x_mtx( CellRangerIn[0] )
+    adata.obs['sname'] = sname(CellRangerIn[0])
+    print( f"finished file {CellRangerIn[0]}")
     if len(CellRangerIn) > 1:
         for i in range(1,len(CellRangerIn)):
             tmp = scanpy.read_10x_mtx( CellRangerIn[i] )
+            tmp.obs['sname'] = sname(CellRangerIn[i])
             adata = adata.concatenate( tmp, batch_key='sample')
+            print( f"finished file {CellRangerIn[i]}")
     adata.var_names_make_unique()
     adata
 ```
@@ -159,18 +170,10 @@ Counter(sampleID)
 #Counter(sampleName)
 ```
 ```python
-df = pd.DataFrame ( {
-    "cellID" :   adata.obs.index._values,
-    "sampleID" : sampleID  
-})
-df.index = adata.obs.index
-adata.obs= df
 
+adata.obs['sampleID'] = sampleID
 scanpy.pp.calculate_qc_metrics( adata, inplace=True)
-```
 
-```python
-df
 ```
 
 ```python
@@ -201,7 +204,7 @@ def testMT(x):
         r = False
     return (r)
 MTgenes = [ x  for x in adata.var.index if not testMT(x)]
-#print ( Counter(RPgenes) )
+print ( Counter(MTgenes) )
 if len(MTgenes) > 0:
     adata.obs['MTsum'] = adata[:,MTgenes].X.sum(axis=1)
 else:
