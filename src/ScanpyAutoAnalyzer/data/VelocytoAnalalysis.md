@@ -55,6 +55,8 @@ ifile = "combined.loom"
 ```
 
 ```python
+%load_ext autotime 
+
 import scvelo as scv
 import loompy
 import scanpy
