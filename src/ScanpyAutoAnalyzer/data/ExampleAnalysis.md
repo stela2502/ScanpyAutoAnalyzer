@@ -82,6 +82,83 @@ print('\n'.join(f'{m.__name__}=={m.__version__}' for m in globals().values() if 
 ```
 
 ```python
+def addSampleData( adata, sname, sampleInfo ):
+    """Add the sample information obtained by either running demux10x or quantifyRhapsody to a anndata object"""
+    adata.obs['sname'] = sname
+    adata.obs_names = [ sname +"."+ n for n in adata.obs_names]
+    sampleInfo = pd.read_csv( sampleInfo, sep="\t",index_col= 0)
+    sampleInfo['CellIDs'] = [ sname +"."+n+"-1" for n in sampleInfo.index.values]
+    sampleInfo.set_index('CellIDs', inplace=True)
+    adata.obs['CellIDs'] = adata.obs_names
+    obs = adata.obs.merge( sampleInfo, left_index=True, right_index=True)
+    print(obs.shape)
+    obs.drop_duplicates()
+    obs.drop( ['CellIDs'], axis=1, inplace=True)
+    print(obs.shape)
+    adata = adata[ obs.index.values]
+    adata.obs = obs
+    ADT = pd.read_csv( 'Cell2Sample.ADT'+sname+'.R1_001.fastq.gz.tsv', sep="\t",index_col= 0)
+    ADT['CellIDs'] = [ sname+"."+n+"-1" for n in ADT.index.values]
+    ADT.set_index( 'CellIDs' , inplace=True)
+    
+    obs = adata.obs.merge( ADT, left_index=True, right_index=True )
+    #print(obs)
+    #print (adata)
+    adata = adata[ obs.index.values]
+    #print(adata)
+    adata.obs = obs
+    return (adata)
+
+def testRP(x, RP):
+    r= True
+    if RP.match(x):
+        r = False
+    return (r)
+
+def dropRP ( adata, drop = True ):
+    """ remove all genes matching to /^R[pP][SsLl]/ """
+    RP = re.compile('^R[pP][SsLl]')
+    RPgenes = [ x  for x in adata.var.index if not testRP(x, RP)]
+    print ( Counter(RPgenes) )
+    if  len(RPgenes) > 0:
+        adata.obs['RP[LS]sum'] = adata[:,RPgenes].X.sum(axis=1)
+    else:
+        adata.obs['RP[LS]sum'] = 0
+    if drop and len(RPgenes) > 0:
+        OK = [ testRP(x) for x in adata.var.index ]
+        print(Counter(OK))
+        adata._inplace_subset_var( np.array(OK) )
+    adata
+
+def testMT(x, MT):
+    r= True
+    if MT.match(x):
+        r = False
+    return (r)
+
+def dropMT (adata, drop = True ) :
+    """ remove all genes matching to /^[Mm][Tt]-/ """
+    MT = re.compile('^[Mm][Tt]-')
+    MTgenes = [ x  for x in adata.var.index if not testMT(x, MT)]
+    print ( Counter(MTgenes) )
+    if len(MTgenes) > 0:
+        adata.obs['MTsum'] = adata[:,MTgenes].X.sum(axis=1)
+    else:
+        adata.obs['MTsum'] = 0
+    if drop and len(MTgenes) > 0:
+        OK = [ testMT(x) for x in adata.var.index ]
+        adata._inplace_subset_var( np.array(OK) )
+
+
+def testGene(x, MT, RP):
+    r= True
+    if MT.match(x) or RP.match(x):
+        r = False
+    return (r)
+```
+
+
+```python
 if not CellRangerIn[0] == "CELLRANGERDATA":
         def sname( path ):
     path, fname = os.path.split(path)
@@ -177,43 +254,18 @@ scanpy.pp.calculate_qc_metrics( adata, inplace=True)
 ```
 
 ```python
+MT = re.compile('^[Mm][Tt]-')
 RP = re.compile('^R[pP][SsLl]')
-def testRP(x):
-    r= True
-    if RP.match(x):
-        r = False
-    return (r)
-RPgenes = [ x  for x in adata.var.index if not testRP(x)]
-#print ( Counter(RPgenes) )
-if  len(RPgenes) > 0:
-    adata.obs['RP[LS]sum'] = adata[:,RPgenes].X.sum(axis=1)
-else:
-    adata.obs['RP[LS]sum'] = 0
-if not RPexclude == "RPEXCLUDE" and len(RPgenes) > 0:
-    OK = [ testRP(x) for x in adata.var.index ]
-    print(Counter(OK))
-    adata._inplace_subset_var( np.array(OK) )
-    adata
+
+genes = [ x  for x in adata.var.index if testGene(x, MT, RP)]
+adata.obs['geneSum'] = adata[:,genes].X.sum(axis=1)
+
+adata
 ```
 
 ```python
-MT = re.compile('^M[Tt]-')
-def testMT(x):
-    r= True
-    if MT.match(x):
-        r = False
-    return (r)
-MTgenes = [ x  for x in adata.var.index if not testMT(x)]
-print ( Counter(MTgenes) )
-if len(MTgenes) > 0:
-    adata.obs['MTsum'] = adata[:,MTgenes].X.sum(axis=1)
-else:
-    adata.obs['MTsum'] = 0
-
-if not MTexclude == "MTEXCLUDE":
-    OK = [ testMT(x) for x in adata.var.index ]
-    adata._inplace_subset_var( np.array(OK) )
-    adata
+dropRP( adata, not RPexclude == "RPEXCLUDE" )
+dropMT( adata, not MTexclude == "MTEXCLUDE" )
 ```
 
 ```python
@@ -221,18 +273,6 @@ print(adata.n_vars)
 
 ```
 
-```python
-def testGene(x):
-    r= True
-    if MT.match(x) or RP.match(x):
-        r = False
-    return (r)
-
-genes = [ x  for x in adata.var.index if testGene(x)]
-adata.obs['geneSum'] = adata[:,genes].X.sum(axis=1)
-
-adata
-```
 
 ```python
 if len(genes) != adata.n_vars:
@@ -291,7 +331,7 @@ scv.pl.scatter(adata, color='geneSum', figsize =(7,5), legend_loc='right margin'
 ```python
 if not GOIS[0] == "GenesOfInterest":
     for gene in GOIS:
-        scv.pl.scatter(adata, color=gene, cmap="viridis_r", figsize =(15,12), legend_loc='right margin')
+        scv.pl.scatter(adata, color=gene, cmap="viridis_r", figsize =(15,12), size = 20, legend_loc='right margin')
 ```
 
 ```python
@@ -354,5 +394,12 @@ for ID in Counter(sampleID).keys():
 ```
 
 ```python
-
+row = "sname"
+col = "louvain"
+colS = col.replace(" ", "_")
+of = "ThisAnalysis"+"_"+row+"_vs_"+colS+".tsv"
+test = pd.DataFrame({name : adata[adata.obs[col] ==name].obs[row].value_counts() for name in adata.obs[col].unique() })
+test.to_csv(of, sep="\t")
+print ( of )
+! head {of}
 ```
