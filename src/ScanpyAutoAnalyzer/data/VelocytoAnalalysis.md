@@ -271,7 +271,7 @@ adata
 ```
 
 ```python
-scv.pp.moments(adata, n_pcs=30, n_neighbors=30)
+scv.pp.moments(adata)
 #scanpy.pp.neighbors(adata, n_neighbors=30)
 if dimensions == "DIMENSIONS":
     dimensions = 2
