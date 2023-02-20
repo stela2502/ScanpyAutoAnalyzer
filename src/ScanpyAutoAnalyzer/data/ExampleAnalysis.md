@@ -59,13 +59,11 @@ import igraph
 import phate
 import glob, os
 import pandas as pd
-import os
 import re
 import subprocess
 from collections import Counter
 import numpy as np
 from shutil import rmtree
-import os
 
 import h5py
 from shutil import copyfile
@@ -230,7 +228,7 @@ if adata is None:
 ```
 
 ```python
-sampleID = [re.sub("[AGCT]*-", "", x) for x in adata.obs.index._values ]
+sampleID = [re.sub("[AGCT]*-", "", x) for x in adata.var.index._values ]
 Counter(sampleID)
 ```
 
@@ -306,7 +304,7 @@ adata
 
 ```python
 #scv.pp.moments(adata, n_pcs=30, n_neighbors=30)
-scanpy.pp.neighbors(adata, n_neighbors=30)
+scanpy.pp.neighbors(adata)
 if dimensions == "DIMENSIONS":
     dimensions = 2
 scanpy.tl.umap(adata,n_components= dimensions)
@@ -412,4 +410,9 @@ test = pd.DataFrame({name : adata[adata.obs[col] ==name].obs[row].value_counts()
 test.to_csv(of, sep="\t")
 print ( of )
 ! head {of}
+```
+
+```python
+adata.obs['sampleID'] = sampleID
+adata.obs.pivot_table(values = "louvian", index = "louvain", columns="sampleID", aggfunc='count')
 ```
