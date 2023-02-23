@@ -25,6 +25,7 @@ CellRangerIn = [ "CELLRANGERDATA" ]
 CellRangerH5 = [ "CELLRANGERH5" ]
 LoomIn = [ "LoomIN" ]
 h5file = "H5FILE"
+AlevinIN = [ "ALEVIN"]
 
 ```
 
@@ -213,6 +214,26 @@ if not h5file == "H5FILE":
     adata
 ```
 
+```python
+if not AlevinIN[0] == "ALEVIN":
+        def sname( path ):
+    path, sname = os.path.split(path)
+    return(sname)
+
+if not AlevinIN[0] == "ALEVIN":
+    print("reading alevin-fry results")
+    adata = pyroe.load_fry( AlevinIN[0] )
+    adata.obs['sname'] = sname(AlevinIN[0])
+    print( f"finished file {AlevinIN[0]}")
+    if len(AlevinIN) > 1:
+        for i in range(1,len(AlevinIN)):
+            tmp = scanpy.read_10x_mtx( AlevinIN[i] )
+            tmp.obs['sname'] = sname(AlevinIN[i])
+            adata = adata.concatenate( tmp, batch_key='sample')
+            print( f"finished file {AlevinIN[i]}")
+    adata.var_names_make_unique()
+    adata
+```
 
 ```python
 adata.write(ofile)

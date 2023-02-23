@@ -107,6 +107,7 @@ elif isdir(args.input):
 
     H5 = AA.find_files( args.input, '.h5$' )
     CR = AA.find_path ( args.input )
+    AL = AA.find_path( args.input, ".*quant_res")
     print("H5: "+ "\", \"".join(str(v) for v in H5))
     print("CR: "+ "\", \"".join(str(v) for v in CR))
     print("len H5: "+ str(len(H5)) )
@@ -116,6 +117,9 @@ elif isdir(args.input):
     elif len(CR) > 0:
         CR = "\", \"".join(str(v) for v in CR)
         txt = txt.replace( "CELLRANGERDATA", CR, 1 )
+    elif len(AL) > 0:
+        AL = "\", \"".join(str(v) for v in AL)
+        txt = txt.replace( "ALEVIN", AL, 1 )
     else:
         LM = AA.find_files( args.input, '.loom$' )
         if len(LM) > 0:
