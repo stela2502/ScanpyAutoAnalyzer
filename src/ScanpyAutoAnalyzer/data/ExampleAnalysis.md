@@ -125,7 +125,7 @@ def dropRP ( adata, drop = True ):
     else:
         adata.obs['RP[LS]sum'] = 0
     if drop and len(RPgenes) > 0:
-        OK = [ testRP(x) for x in adata.var.index ]
+        OK = [ testRP(x, RP) for x in adata.var.index ]
         print(Counter(OK))
         adata._inplace_subset_var( np.array(OK) )
     adata
@@ -146,7 +146,7 @@ def dropMT (adata, drop = True ) :
     else:
         adata.obs['MTsum'] = 0
     if drop and len(MTgenes) > 0:
-        OK = [ testMT(x) for x in adata.var.index ]
+        OK = [ testMT(x, MT) for x in adata.var.index ]
         adata._inplace_subset_var( np.array(OK) )
 
 
