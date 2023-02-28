@@ -441,7 +441,18 @@ adata.obs.pivot_table(values = "louvian", index = "louvain", columns="sampleID",
 One more thing that was usable in a two column analysis:
 
 ```python
-tomato_louvain = adata.obs.pivot_table(values = "n_genes", index = "louvain", columns="tomato", aggfunc='count')
-tomato_louvain_scaled = tomato_louvain.apply( lambda x: { "Neg" : x[0] *100 / sum(x) , "Pos" : x[1] *100 / sum(x)}, axis=1,  result_type='expand')
+tomato_louvain = adata.obs.pivot_table(values = "n_genes", index = "louvain", columns="sampleID", aggfunc='count')
+tomato_louvain_scaled = tomato_louvain.apply( lambda x: { "Sam1" : x[0] *100 / sum(x) , "Sam2" : x[1] *100 / sum(x)}, axis=1,  result_type='expand')
 tomato_louvain_scaled.plot.bar(stacked=True)
 ```
+
+A gene dot plot:
+
+```python
+markers = ['Nt5e', 'Cd80', 'Pdcd1lg2', 'Aicda', 'Igha', 'Ighd', 
+           'Ighg1', 'Ighg2b', 'Bcl6', 'Nr4a1', 'Bhlhe41', 'Irf7', 
+           'Tbx21', 'Cd1d1', 'Prdm1', 'Mki67', 'Cd3e' , 'Cd14']
+if not GOIS[0] == "GenesOfInterest":
+    scanpy.pl.dotplot(adata, GOIS, groupby='louvain', dendrogram=True)
+```
+
