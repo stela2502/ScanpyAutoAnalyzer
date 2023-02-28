@@ -437,3 +437,11 @@ print ( of )
 adata.obs['sampleID'] = sampleID
 adata.obs.pivot_table(values = "louvian", index = "louvain", columns="sampleID", aggfunc='count')
 ```
+
+One more thing that was usable in a two column analysis:
+
+```python
+tomato_louvain = adata.obs.pivot_table(values = "n_genes", index = "louvain", columns="tomato", aggfunc='count')
+tomato_louvain_scaled = tomato_louvain.apply( lambda x: { "Neg" : x[0] *100 / sum(x) , "Pos" : x[1] *100 / sum(x)}, axis=1,  result_type='expand')
+tomato_louvain_scaled.plot.bar(stacked=True)
+```
