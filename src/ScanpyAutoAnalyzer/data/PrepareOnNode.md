@@ -27,14 +27,15 @@ def ensure_dir(file_path):
     if not os.path.exists(file_path):
         os.makedirs(file_path)
 
-
-print(os.environ['SNIC_TMP'])
-path = os.path.basename( os.environ['SNIC_TMP'] )
-wd = f"/mnt/{path}/{ananylsisName}"
-ensure_dir( wd )
-origWD = os.getcwd()
-
-os.chdir( wd )
+try:
+    origWD
+except NameError:
+    print(os.environ['SNIC_TMP'])
+    path = os.path.basename( os.environ['SNIC_TMP'] )
+    wd = f"{os.environ['SNIC_TMP']}/ananylsis"
+    ensure_dir( wd )
+    origWD = os.getcwd()
+    os.chdir( wd )
 
 ```
 
