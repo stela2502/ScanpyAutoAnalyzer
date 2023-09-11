@@ -483,10 +483,14 @@ def scale_values(row):
 And now create ans scale the table and plot it.
 
 ```python
+import matplotlib.pyplot as plt
+
 sname_tab = adata.obs.pivot_table(values = "n_genes", index = "louvain", columns="sname", aggfunc='count')
 sname_tab_scaled = sname_tab.apply( scale_values, axis=1,  result_type='expand')
 ax = sname_tab_scaled.plot.bar(stacked=True)
 ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+plt.savefig('sname_vs_louvain_stacked_bar_plot.svg', format='svg', bbox_inches='tight')
+plt.show()
 ```
 
 A gene dot plot:
