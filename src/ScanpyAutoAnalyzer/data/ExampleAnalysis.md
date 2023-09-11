@@ -156,6 +156,31 @@ def testGene(x, MT, RP):
     if MT.match(x) or RP.match(x):
         r = False
     return (r)
+
+def write_stats_tables( adata, key_added,cn ="louvain" ):
+
+    scanpy.tl.rank_genes_groups(
+        adata, 
+        groupby   = cn,
+        key_added = key_added,
+        method    = 'wilcoxon',
+    )
+
+    scanpy.pl.rank_genes_groups(adata, key = key_added, save= key_added+"_overview")
+
+    diff_results = adata.uns[key_added]
+    columns = ['names', 'scores', 'pvals', 'pvals_adj', 'logfoldchanges']
+    try: 
+        os.mkdir(f"{key_added}") 
+    except OSError as error: 
+        print(error)  
+
+    for i in adata.obs[cn].unique():
+        table = {}
+        for j in columns:
+            #print(f"Analyszing column {diff_results[j]} {i}")
+            table[j] = pd.DataFrame(diff_results[j])[str(i)]
+        table = pd.DataFrame(table).to_csv(f"{key_added}/{cn}_cluster_{i}.csv")
 ```
 
 
@@ -411,6 +436,13 @@ adata.write(ofile)
 print(ofile)
 ```
 
+Or a little easier to use - the write_stats_tables function defined earlier:
+
+```python
+write_stats_tables( adata, key_added = "louvain_stats" ,cn ="louvain" )
+```
+
+
 # It has helped tremendousely
 
 to plot the louvain clusters sample specific.
@@ -440,10 +472,21 @@ adata.obs.pivot_table(values = "louvian", index = "louvain", columns="sampleID",
 
 One more thing that was usable in a two column analysis:
 
+a more efficien scaling method:
+
 ```python
-tomato_louvain = adata.obs.pivot_table(values = "n_genes", index = "louvain", columns="sampleID", aggfunc='count')
-tomato_louvain_scaled = tomato_louvain.apply( lambda x: { "Sam1" : x[0] *100 / sum(x) , "Sam2" : x[1] *100 / sum(x)}, axis=1,  result_type='expand')
-tomato_louvain_scaled.plot.bar(stacked=True)
+def scale_values(row):
+    total_sum = sum(row)
+    scaled_values = {key: value * 100 / total_sum for key, value in row.items()}
+    return scaled_values
+```
+And now create ans scale the table and plot it.
+
+```python
+sname_tab = adata.obs.pivot_table(values = "n_genes", index = "louvain", columns="sname", aggfunc='count')
+sname_tab_scaled = sname_tab.apply( scale_values, axis=1,  result_type='expand')
+ax = sname_tab_scaled.plot.bar(stacked=True)
+ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 ```
 
 A gene dot plot:
