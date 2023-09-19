@@ -65,6 +65,7 @@ import subprocess
 from collections import Counter
 import numpy as np
 from shutil import rmtree
+import anndata
 
 import h5py
 from shutil import copyfile
@@ -487,7 +488,7 @@ import matplotlib.pyplot as plt
 
 sname_tab = adata.obs.pivot_table(values = "n_genes", index = "louvain", columns="sname", aggfunc='count')
 sname_tab_scaled = sname_tab.apply( scale_values, axis=1,  result_type='expand')
-ax = sname_tab_scaled.plot.bar(stacked=True)
+ax = sname_tab_scaled.plot.bar(stacked=True, figsize=(16, 8))
 ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 plt.savefig('sname_vs_louvain_stacked_bar_plot.svg', format='svg', bbox_inches='tight')
 plt.show()
