@@ -48,6 +48,9 @@ sc.tl.leiden(adata)
 
 SCVI_MDE_KEY = "X_scVI_MDE"
 adata.obsm[SCVI_MDE_KEY] = scvi.model.utils.mde(adata.obsm[SCVI_LATENT_KEY])
+
+SCVI_MDE_KEY = "X_scVI_MDE_3d"
+adata.obsm[SCVI_MDE_KEY] = scvi.model.utils.mde(adata.obsm[SCVI_LATENT_KEY], embedding_dim=3)
 ```
 
 ```python
