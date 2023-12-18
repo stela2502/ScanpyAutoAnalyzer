@@ -253,7 +253,7 @@ if not AlevinIN[0] == "ALEVIN":
     print( f"finished file {AlevinIN[0]}")
     if len(AlevinIN) > 1:
         for i in range(1,len(AlevinIN)):
-            tmp = scanpy.read_10x_mtx( AlevinIN[i] )
+            tmp = pyroe.load_fry( AlevinIN[i] )
             tmp.obs['sname'] = sname(AlevinIN[i])
             adata = adata.concatenate( tmp, batch_key='sample')
             print( f"finished file {AlevinIN[i]}")
