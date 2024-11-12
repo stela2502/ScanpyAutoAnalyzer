@@ -1,4 +1,3 @@
-%load_ext autotime
 
 import scvelo as scv
 import loompy
