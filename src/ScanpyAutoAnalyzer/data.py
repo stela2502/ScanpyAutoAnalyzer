@@ -1,32 +1,38 @@
 import pkg_resources
-from os.path import isfile, join, isdir, exists
+from os.path import isfile, join, exists
 from pathlib import Path
 import warnings
 import shutil
 
-def copy_script_to_path ( name, path ):
-	"""Copies a script from the package resources to the specified path."""
+def copy_script_to_path(name, path):
+    """Copies a script from the package resources to the specified path."""
     # Get the resource file path within the package
-    libFile = getScript4( name )
+    libFile = getScript4(name)
+    
     # Check if the file exists
     if not exists(libFile):
         warnings.warn(f"File {name} does not exist in the package.")
         return
+    
     # Define the destination path where the file should be copied
     destination = join(path, f"{name}.md")
+    
+    # Check if the destination path exists
+    destination_dir = Path(path)
+    if not destination_dir.exists():
+        warnings.warn(f"Destination path '{path}' does not exist. Creating it.")
+        destination_dir.mkdir(parents=True, exist_ok=True)
+    
     # Copy the file
     shutil.copy(libFile, destination)
     print(f"File {name} copied to {destination}")
 
-
-def getScript4 ( name="ExampleAnalysis" ):
-
-	libFile = pkg_resources.resource_filename('ScanpyAutoAnalyzer',join( 'data', f"{name}.md" ))
-	if not exists( libFile ):
-		warnings.warn( f"Sorry - {name} is not one of the options I can give you:\n{help()}" )
-
-	return ( libFile )
-
+def getScript4(name="ExampleAnalysis"):
+    """Gets the file path for a specified script within the package."""
+    libFile = pkg_resources.resource_filename('ScanpyAutoAnalyzer', join('data', f"{name}.md"))
+    if not exists(libFile):
+        warnings.warn(f"Sorry - {name} is not one of the available options.")
+    return libFile
 
 def help():
     """Generates a formatted help string for each .md file's help text."""
@@ -53,10 +59,8 @@ def help():
     # Join all entries with a separator
     return "\n".join(help_entries)
 
-
-
-
 def read_first_non_code_section(filepath):
+    """Reads the first non-code section of a markdown file."""
     first_section = []
     in_code_block = False
 
@@ -79,6 +83,6 @@ def read_first_non_code_section(filepath):
             # Stop at the next empty line, indicating end of the section
             elif first_section:
                 break
-                
+
     # Join lines with line breaks to reconstruct the section
     return "\n".join(first_section)
