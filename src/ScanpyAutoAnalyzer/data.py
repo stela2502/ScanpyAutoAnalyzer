@@ -7,17 +7,13 @@ import shutil
 def copy_script_to_path ( name, path ):
 	"""Copies a script from the package resources to the specified path."""
     # Get the resource file path within the package
-
     libFile = getScript4( name )
-
     # Check if the file exists
     if not exists(libFile):
         warnings.warn(f"File {name} does not exist in the package.")
         return
-
     # Define the destination path where the file should be copied
     destination = join(path, f"{name}.md")
-
     # Copy the file
     shutil.copy(libFile, destination)
     print(f"File {name} copied to {destination}")
@@ -83,6 +79,6 @@ def read_first_non_code_section(filepath):
             # Stop at the next empty line, indicating end of the section
             elif first_section:
                 break
-
+                
     # Join lines with line breaks to reconstruct the section
     return "\n".join(first_section)
