@@ -108,7 +108,7 @@ def reIDgroup( adata, group ):
 
 ```python
 scanpy.tl.louvain( adata, resolution =15,key_added='louvain_clusters15')
-adata.obs['louvain15_merged.95'] = adata.obs['louvain_clusters15']
+adata.obs['louvain15_merged.95'] = [str(n) for n in adata.obs['louvain_clusters15'] ] # make sure it is no numeric!
 while ( mergeClosest( adata, group = 'louvain15_merged.95', cut=0.95 ) ):
     print ( "w", end=" - ")
 

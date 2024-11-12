@@ -158,6 +158,40 @@ def testGene(x, MT, RP):
         r = False
     return (r)
 
+def write_top_genes_per_cluster(adata, stats_name, n_top_genes=20, output_file="top_genes_per_cluster.csv"):
+    """
+    Extracts the top `n_top_genes` highly expressed genes per cluster from a Scanpy `AnnData` object
+    and writes them into a CSV file. Each row in the file contains the top genes for a cluster,
+    comma-separated.
+
+    Parameters:
+        adata (AnnData): The annotated data matrix from Scanpy containing gene expression data.
+        n_top_genes (int): The number of top genes to extract per cluster. Default is 20.
+        output_file (str): The output CSV file where top genes per cluster will be saved.
+    """
+
+
+    # Check if the `rank_genes_groups` function has been run
+    if stats_name not in adata.uns:
+        raise ValueError(f"No {stats_name} results found in the AnnData object. Please run `sc.tl.rank_genes_groups()` first.")
+
+    # Get the ranked genes for each group
+    ranked_genes = pd.DataFrame(adata.uns[ stats_name ]['names']).head(n_top_genes)
+
+    with open(output_file, 'w') as f:
+        # Write top genes for each cluster
+        for cluster in ranked_genes.columns:
+            top_genes = ranked_genes[cluster].tolist()
+            f.write(f"{cluster}: {','.join(top_genes)}\n")
+
+    print(f"Top {n_top_genes} genes per cluster have been written to {output_file}")
+
+# Example usage:
+# Assuming you have an AnnData object `adata` and have run `sc.tl.rank_genes_groups` already:
+# write_top_genes_per_cluster(adata, n_top_genes=20, output_file="top_genes.csv")
+
+
+
 def write_stats_tables( adata, key_added,cn ="louvain" ):
 
     scanpy.tl.rank_genes_groups(

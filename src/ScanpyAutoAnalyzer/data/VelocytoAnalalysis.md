@@ -25,16 +25,13 @@ CellRangerIn = [ "CELLRANGERDATA" ]
 CellRangerH5 = [ "CELLRANGERH5" ]
 LoomIn = [ "LoomIN" ]
 h5file = "H5FILE"
-
 ```
 
 ```python
 ofile = "OUTFILE.h5ad"
 subset = "OUTFILE_subset.h5ad"
 
-
 dimensions = "DIMENSIONS"
-
 ```
 
 ```python
