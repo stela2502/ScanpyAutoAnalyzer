@@ -12,13 +12,7 @@ jupyter:
     name: python3
 ---
 
-# An Example Analysis
-
-The corner stones here should be flexibility.
-2D or 3D analysis - exclude ^MT- and ^RP[LS] or only one of them?
-How to deal with this expression if the genes are not excluded?
-
-Make it scriptable - Input either h5ad, loom or CellRanger out files.
+The main collection of functions and example usages. You likely want this one ;-)
 
 ```python
 CellRangerIn = [ "CELLRANGERDATA" ]

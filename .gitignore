@@ -1,1 +1,45 @@
 build
+# Ignore Python bytecode files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore egg-info and build directories
+*.egg-info/
+dist/
+build/
+
+# Ignore virtual environments
+venv/
+env/
+.venv/
+.env/
+
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Ignore test coverage and reports
+.coverage
+*.coveragerc
+nosetests.xml
+test_*.xml
+
+# Ignore mypy cache (if you use mypy for type checking)
+.mypy_cache/
+
+# Ignore pipenv files if using pipenv for dependency management
+Pipfile.lock
+
+# Ignore pyenv files (if using pyenv for Python version management)
+.python-version
+
+# Ignore IntelliJ IDEA project files
+.idea/
+
+# Ignore VSCode workspace files
+.vscode/
+
+# Ignore Sphinx build directories
+_build/
+doc/build/

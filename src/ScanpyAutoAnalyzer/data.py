@@ -13,7 +13,7 @@ def copy_script_to_path(name, path):
     if not exists(libFile):
         warnings.warn(f"File {name} does not exist in the package.")
         return
-    
+
     # Define the destination path where the file should be copied
     destination = join(path, f"{name}.md")
     
@@ -35,16 +35,16 @@ def getScript4(name="ExampleAnalysis"):
     return libFile
 
 def help():
-    """Generates a formatted help string for each .md file's help text."""
-    # Locate the directory with .md files
-    lib_file = pkg_resources.resource_filename('ScanpyAutoAnalyzer', '')  # Adjust path if needed
-    lib_path = Path(lib_file)
+    """Generates a formatted help string in Markdown table format for each .md file's help text."""
+    # Locate the directory with .md files within the package
+    lib_dir = pkg_resources.resource_filename('ScanpyAutoAnalyzer', 'data')
+    lib_path = Path(lib_dir)
 
     # Get all .md files in the directory
     md_files = list(lib_path.glob("*.md"))
 
-    # List to collect each help text entry
-    help_entries = []
+    # Header for the Markdown table
+    help_md = "These are the available mardown file keys:\n"
 
     for md_file in md_files:
         # Use the file's stem as the title
@@ -52,17 +52,18 @@ def help():
         # Read the first non-code section as help text
         help_text = read_first_non_code_section(md_file)
         
-        # Format each entry with a title and the help text
-        entry = f"### {file_key}\n{help_text}\n"
-        help_entries.append(entry)
+        # Format each entry as a Markdown table row
+        help_md += f"### {file_key}\n {help_text} \n"
 
-    # Join all entries with a separator
-    return "\n".join(help_entries)
+    return help_md
+
 
 def read_first_non_code_section(filepath):
-    """Reads the first non-code section of a markdown file."""
+    """Reads the first non-code, non-comment section of a markdown file."""
     first_section = []
+    with_data = False  # To check if we've started gathering data
     in_code_block = False
+    in_comment = False
 
     with open(filepath, "r") as file:
         for line in file:
@@ -70,19 +71,26 @@ def read_first_non_code_section(filepath):
 
             # Detect start and end of code blocks
             if line.startswith("```"):
+                if with_data:
+       	            break
                 in_code_block = not in_code_block
                 continue
 
-            # Skip lines within code blocks
-            if in_code_block:
+            # Detect start and end of comment blocks
+            if line.startswith("---"):
+                if with_data:
+                    break
+                in_comment = not in_comment
                 continue
 
-            # Add non-code lines to first_section
+            # Skip lines within code or comment blocks
+            if in_code_block or in_comment:
+                continue
+
+            # Add non-code, non-comment lines to first_section
             if line:
                 first_section.append(line)
-            # Stop at the next empty line, indicating end of the section
-            elif first_section:
-                break
+                with_data = True
 
     # Join lines with line breaks to reconstruct the section
     return "\n".join(first_section)

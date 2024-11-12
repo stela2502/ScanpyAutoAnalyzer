@@ -1,13 +1,11 @@
 # ScanpyAutoAnalyzer
 
-ScanpyAutoAnalyzer is a simple Python package that provides scripts, which use jupyter notebooks and the jupytext package to run analysis scripts in an automized way.
+This package was planned as an automation package and has turned into a scratchpad manager for me.
+It is a collection of my scanpy enhancements. It is nothing fancy, just making ones live a little easier.
 
-The final idea behind this package is that I have now used the same script to analyze the first steps of a single cell 10X experiment four times.
-And this analysis has always given publication ready results. 
+It also contains my example analysis scripts that are the basis for quite many published analysies.
 
-In addition the data made most of the time sense if analyzed with multiple pseudo timelines. This is not normally the case if you follow the best practice scripts which in my hands always mask developmental steps with cells cycle changes.
-
-As I expect to run more analyes in the future - way more - I am planning to automize this script to ultimately become part of a nextflow pipeline. I plann to prepare this as a singularity image and hence instead of creating a simple script in my scope I plann to install this script globally.
+How to use it is described [in  this jupyter notebook](./ShortUsageExample.ipynb)
 
 
 # Install

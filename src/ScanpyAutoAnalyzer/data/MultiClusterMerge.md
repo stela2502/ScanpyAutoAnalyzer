@@ -12,9 +12,7 @@ jupyter:
     name: python3
 ---
 
-# Overluster the anndata object
-
-The aim of this analysis is to first overcluster the anndata object (``adata``)`and then merge cells that are too similar into one cluster again.
+My functions to overcluster and then merge the closest clusters if mean expression corelates better than the threshold.
 
 
 ```python

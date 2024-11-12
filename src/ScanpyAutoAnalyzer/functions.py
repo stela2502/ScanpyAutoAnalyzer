@@ -109,6 +109,10 @@ def write_top_genes_per_cluster(adata, stats_name, n_top_genes=20, output_file="
 
 
 def write_stats_tables( adata, key_added,cn ="louvain" ):
+    """
+    Creates the stats using the 'wilcoxon' method, plots the top genes using scanpy.pl.rank_genes_groups
+    and finally writes tab separated tables to a <key_added> foilder.
+    """ 
 
     scanpy.tl.rank_genes_groups(
         adata, 
@@ -157,6 +161,9 @@ def gzip_files_in_directory(path):
         print(f"The directory {path} does not exist.")
 
 def write_data_to_directory(adata, output_dir):
+    """ 
+    exports the anndata.X sparse matrix as 10X formated matrix.mtx barcodes.tsv and features.tsv set 
+    """
     # Ensure the directory exists
     os.makedirs(output_dir, exist_ok=True)
     

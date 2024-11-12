@@ -1,3 +1,5 @@
+An example of how to use the SingleR package from within a singularity image (SingSingCell).
+
 ```R
 library(SingleR)
 library(scuttle)

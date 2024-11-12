@@ -27,7 +27,10 @@ setuptools.setup(
     package_dir={"ScanpyAutoAnalyzer": "src/ScanpyAutoAnalyzer"},
     package_data={"ScanpyAutoAnalyzer": [
         "data/ExampleAnalysis.md",
-        "data/VelocytoAnalalysis.md"
+        "data/VelocytoAnalalysis.md",
+        "data/ImputeExpression.md",
+        "data/MultiClusterMerge.md",
+        "data/ScVI_integration.md",
         ] 
     },
     packages=setuptools.find_packages(where="src"),

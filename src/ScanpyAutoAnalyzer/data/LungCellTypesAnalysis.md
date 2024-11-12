@@ -12,6 +12,9 @@ jupyter:
     name: python3
 ---
 
+This is likely useless. Ignore this file!
+```
+```
 
 # This is is all based on a Chatty Scholar GPT 'discussion':
 

@@ -1,6 +1,4 @@
-# Impute expression values using scvi 
-
-
+An example of how to impute expression values in a 10X output.
 
 ```python
 %load_ext autotime

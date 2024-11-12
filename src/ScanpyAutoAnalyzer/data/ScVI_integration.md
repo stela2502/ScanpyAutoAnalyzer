@@ -12,7 +12,7 @@ jupyter:
     name: python3
 ---
 
-# Integrate several adata objects using scVI
+Integrate several adata objects using ScVi
 
 ```python
 import scanpy as sc
