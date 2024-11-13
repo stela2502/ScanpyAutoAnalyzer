@@ -1,12 +1,33 @@
 # ScanpyAutoAnalyzer
 
 This package was planned as an automation package and has turned into a scratchpad manager for me.
-It is a collection of my scanpy enhancements. It is nothing fancy, just making ones live a little easier.
+It is a collection of my Scanpy enhancements. It is nothing fancy, just making ones live a little easier.
 
-It also contains my example analysis scripts that are the basis for quite many published analysies.
+It contains my exmpale scripts that describe my basic workflow.
 
-How to use it is described [in  this jupyter notebook](./ShortUsageExample.ipynb)
 
+# Usage
+
+How to use it is described [in  this jupyter notebook](./ShortUsageExample.ipynb).
+
+The real power of this tool is to apply an example workflow on any data - like e.g.
+
+```
+InitallyAnalyze( "my_scanpy_h5_file", "my_analyzed_h5ad_file" )
+OverClusterStrategy ( "my_analyzed_h5ad_file" )
+```
+
+This will take parts of my example md files, convert them into Jupyter notebooks using jupytext and execute the analysis using papermill.
+
+```python
+
+from ScanpyAutoAnalyszer import *
+from IPython.display import Markdown
+
+#the functions
+info(ScanpyAutoAnalyzer)
+# The avaibale examples
+Markdown(info())
 
 # Install
 

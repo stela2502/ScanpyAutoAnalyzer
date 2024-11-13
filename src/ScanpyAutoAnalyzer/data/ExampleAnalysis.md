@@ -14,34 +14,25 @@ jupyter:
 
 The main collection of functions and example usages. You likely want this one ;-)
 
-```python
+
+```python tags=["parameters"]
 CellRangerIn = [ "CELLRANGERDATA" ]
 CellRangerH5 = [ "CELLRANGERH5" ]
 LoomIn = [ "LoomIN" ]
 h5file = "H5FILE"
 AlevinIN = [ "ALEVIN"]
 
-```
-
-```python
 ofile = "OUTFILE.h5ad"
 dimensions = "DIMENSIONS"
 
-```
 
-```python
 RPexclude = "RPEXCLUDE"
 MTexclude = "MTEXCLUDE"
 
-key = "louvain" ## the column to run stats on - leave it like that
+key = "leiden" ## the column to run stats on - leave it like that
 key_added = 'KEY_ADDED' ## stats table name and folder name!
 
-```
-
-```python
 GOIS = [ "GenesOfInterest" ]
-
-onNode = "ONNODE"
 ```
 
 ```python
@@ -64,6 +55,8 @@ import anndata
 import h5py
 from shutil import copyfile
 
+from ScanpyAutoAnalyzer import *
+
 
 def copyFiles(files, to):
     for f in files:
@@ -78,149 +71,17 @@ print('\n'.join(f'{m.__name__}=={m.__version__}' for m in globals().values() if 
 ```
 
 ```python
-def addSampleData( adata, sname, sampleInfo ):
-    """Add the sample information obtained by either running demux10x or quantifyRhapsody to a anndata object"""
-    adata.obs['sname'] = sname
-    adata.obs_names = [ sname +"."+ n for n in adata.obs_names]
-    sampleInfo = pd.read_csv( sampleInfo, sep="\t",index_col= 0)
-    sampleInfo['CellIDs'] = [ sname +"."+n+"-1" for n in sampleInfo.index.values]
-    sampleInfo.set_index('CellIDs', inplace=True)
-    adata.obs['CellIDs'] = adata.obs_names
-    obs = adata.obs.merge( sampleInfo, left_index=True, right_index=True)
-    print(obs.shape)
-    obs.drop_duplicates()
-    obs.drop( ['CellIDs'], axis=1, inplace=True)
-    print(obs.shape)
-    adata = adata[ obs.index.values]
-    adata.obs = obs
-    ADT = pd.read_csv( 'Cell2Sample.ADT'+sname+'.R1_001.fastq.gz.tsv', sep="\t",index_col= 0)
-    ADT['CellIDs'] = [ sname+"."+n+"-1" for n in ADT.index.values]
-    ADT.set_index( 'CellIDs' , inplace=True)
-    
-    obs = adata.obs.merge( ADT, left_index=True, right_index=True )
-    #print(obs)
-    #print (adata)
-    adata = adata[ obs.index.values]
-    #print(adata)
-    adata.obs = obs
-    return (adata)
-
-def testRP(x, RP):
-    r= True
-    if RP.match(x):
-        r = False
-    return (r)
-
-def dropRP ( adata, drop = True ):
-    """ remove all genes matching to /^R[pP][SsLl]/ """
-    RP = re.compile('^R[pP][SsLl]')
-    RPgenes = [ x  for x in adata.var.index if not testRP(x, RP)]
-    print ( Counter(RPgenes) )
-    if  len(RPgenes) > 0:
-        adata.obs['RP[LS]sum'] = adata[:,RPgenes].X.sum(axis=1)
-    else:
-        adata.obs['RP[LS]sum'] = 0
-    if drop and len(RPgenes) > 0:
-        OK = [ testRP(x, RP) for x in adata.var.index ]
-        print(Counter(OK))
-        adata._inplace_subset_var( np.array(OK) )
-    adata
-
-def testMT(x, MT):
-    r= True
-    if MT.match(x):
-        r = False
-    return (r)
-
-def dropMT (adata, drop = True ) :
-    """ remove all genes matching to /^[Mm][Tt]-/ """
-    MT = re.compile('^[Mm][Tt]-')
-    MTgenes = [ x  for x in adata.var.index if not testMT(x, MT)]
-    print ( Counter(MTgenes) )
-    if len(MTgenes) > 0:
-        adata.obs['MTsum'] = adata[:,MTgenes].X.sum(axis=1)
-    else:
-        adata.obs['MTsum'] = 0
-    if drop and len(MTgenes) > 0:
-        OK = [ testMT(x, MT) for x in adata.var.index ]
-        adata._inplace_subset_var( np.array(OK) )
-
-
-def testGene(x, MT, RP):
-    r= True
-    if MT.match(x) or RP.match(x):
-        r = False
-    return (r)
-
-def write_top_genes_per_cluster(adata, stats_name, n_top_genes=20, output_file="top_genes_per_cluster.csv"):
-    """
-    Extracts the top `n_top_genes` highly expressed genes per cluster from a Scanpy `AnnData` object
-    and writes them into a CSV file. Each row in the file contains the top genes for a cluster,
-    comma-separated.
-
-    Parameters:
-        adata (AnnData): The annotated data matrix from Scanpy containing gene expression data.
-        n_top_genes (int): The number of top genes to extract per cluster. Default is 20.
-        output_file (str): The output CSV file where top genes per cluster will be saved.
-    """
-
-
-    # Check if the `rank_genes_groups` function has been run
-    if stats_name not in adata.uns:
-        raise ValueError(f"No {stats_name} results found in the AnnData object. Please run `sc.tl.rank_genes_groups()` first.")
-
-    # Get the ranked genes for each group
-    ranked_genes = pd.DataFrame(adata.uns[ stats_name ]['names']).head(n_top_genes)
-
-    with open(output_file, 'w') as f:
-        # Write top genes for each cluster
-        for cluster in ranked_genes.columns:
-            top_genes = ranked_genes[cluster].tolist()
-            f.write(f"{cluster}: {','.join(top_genes)}\n")
-
-    print(f"Top {n_top_genes} genes per cluster have been written to {output_file}")
-
-# Example usage:
-# Assuming you have an AnnData object `adata` and have run `sc.tl.rank_genes_groups` already:
-# write_top_genes_per_cluster(adata, n_top_genes=20, output_file="top_genes.csv")
-
-
-
-def write_stats_tables( adata, key_added,cn ="louvain" ):
-
-    scanpy.tl.rank_genes_groups(
-        adata, 
-        groupby   = cn,
-        key_added = key_added,
-        method    = 'wilcoxon',
-    )
-
-    scanpy.pl.rank_genes_groups(adata, key = key_added, save= key_added+"_overview")
-
-    diff_results = adata.uns[key_added]
-    columns = ['names', 'scores', 'pvals', 'pvals_adj', 'logfoldchanges']
-    try: 
-        os.mkdir(f"{key_added}") 
-    except OSError as error: 
-        print(error)  
-
-    for i in adata.obs[cn].unique():
-        table = {}
-        for j in columns:
-            #print(f"Analyszing column {diff_results[j]} {i}")
-            table[j] = pd.DataFrame(diff_results[j])[str(i)]
-        table = pd.DataFrame(table).to_csv(f"{key_added}/{cn}_cluster_{i}.csv")
+help("ScanpyAutoAnalyzer")
 ```
 
 
-```python
-if not CellRangerIn[0] == "CELLRANGERDATA":
-        def sname( path ):
-    path, fname = os.path.split(path)
-    file, sname = os.path.split(path)
-    return(sname)
+```python        
 
 if not CellRangerIn[0] == "CELLRANGERDATA":
+    def sname( path ):
+        path, fname = os.path.split(path)
+        file, sname = os.path.split(path)
+        return(sname)
     print("reading CellRanger matrix file(s)")
     adata = scanpy.read_10x_mtx( CellRangerIn[0] )
     adata.obs['sname'] = sname(CellRangerIn[0])
@@ -268,13 +129,12 @@ if not h5file == "H5FILE":
     adata
 ```
 
-```python
-if not AlevinIN[0] == "ALEVIN":
-        def sname( path ):
-    path, sname = os.path.split(path)
-    return(sname)
+```python    
 
 if not AlevinIN[0] == "ALEVIN":
+    def sname( path ):
+        path, sname = os.path.split(path)
+        return(sname)
     print("reading alevin-fry results")
     adata = pyroe.load_fry( AlevinIN[0] )
     adata.obs['sname'] = sname(AlevinIN[0])
@@ -383,7 +243,7 @@ scanpy.pp.neighbors(adata)
 if dimensions == "DIMENSIONS":
     dimensions = 2
 scanpy.tl.umap(adata,n_components= dimensions)
-scanpy.tl.louvain(adata)
+scanpy.tl.leiden(adata)
 ```
 
 ```python
@@ -421,7 +281,7 @@ if not GOIS[0] == "GenesOfInterest":
 
 scanpy.tl.rank_genes_groups(
     adata, 
-    groupby   = 'louvain',
+    groupby   = 'leiden',
     key_added = key_added,
     method    = 'wilcoxon',
 )
@@ -434,9 +294,9 @@ scanpy.pl.rank_genes_groups(adata, key = key_added )
 ```
 
 ```python
-scv.pl.scatter(adata, color=['louvain','sampleID'], figsize =(7,5), legend_loc='on data')
+scv.pl.scatter(adata, color=['leiden','sampleID'], figsize =(7,5), legend_loc='on data')
 
-scv.pl.scatter(adata, color=['louvain','sampleID'], figsize =(7,5), legend_loc='right margin')
+scv.pl.scatter(adata, color=['leiden','sampleID'], figsize =(7,5), legend_loc='right margin')
 ```
 
 ```python
@@ -451,7 +311,7 @@ try:
 except OSError as error: 
     print(error)  
     
-for i in range(adata.obs['louvain'].nunique()-1):
+for i in range(adata.obs['leiden'].nunique()-1):
     table = {}
     for j in columns:
         table[j] = pd.DataFrame(diff_results[j])[str(i)]
@@ -468,24 +328,24 @@ print(ofile)
 Or a little easier to use - the write_stats_tables function defined earlier:
 
 ```python
-write_stats_tables( adata, key_added = "louvain_stats" ,cn ="louvain" )
+write_stats_tables( adata, key_added = "leiden_stats" ,cn ="leiden" )
 ```
 
 
 # It has helped tremendousely
 
-to plot the louvain clusters sample specific.
+to plot the leiden clusters sample specific.
 Makes it way more easy to see where the grooups of interest/problem are.
 
 ```python
 for ID in Counter(sampleID).keys():
     tmp = adata[adata.obs['sampleID'].isin([ID])]
-    scv.pl.scatter(tmp,color=['louvain'], figsize =(14,10), legend_loc='right margin', title=f"sampleID {ID}")
+    scv.pl.scatter(tmp,color=['leiden'], figsize =(14,10), legend_loc='right margin', title=f"sampleID {ID}")
 ```
 
 ```python
 row = "sname"
-col = "louvain"
+col = "leiden"
 colS = col.replace(" ", "_")
 of = "ThisAnalysis"+"_"+row+"_vs_"+colS+".tsv"
 test = pd.DataFrame({name : adata[adata.obs[col] ==name].obs[row].value_counts() for name in adata.obs[col].unique() })
@@ -496,7 +356,7 @@ print ( of )
 
 ```python
 adata.obs['sampleID'] = sampleID
-adata.obs.pivot_table(values = "louvian", index = "louvain", columns="sampleID", aggfunc='count')
+adata.obs.pivot_table(values = "louvian", index = "leiden", columns="sampleID", aggfunc='count')
 ```
 
 One more thing that was usable in a two column analysis:
@@ -509,16 +369,16 @@ def scale_values(row):
     scaled_values = {key: value * 100 / total_sum for key, value in row.items()}
     return scaled_values
 ```
-And now create ans scale the table and plot it.
+And now create and scale the table -> plot it.
 
 ```python
 import matplotlib.pyplot as plt
 
-sname_tab = adata.obs.pivot_table(values = "n_genes", index = "louvain", columns="sname", aggfunc='count')
+sname_tab = adata.obs.pivot_table(values = "n_genes", index = "leiden", columns="sname", aggfunc='count')
 sname_tab_scaled = sname_tab.apply( scale_values, axis=1,  result_type='expand')
 ax = sname_tab_scaled.plot.bar(stacked=True, figsize=(16, 8))
 ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-plt.savefig('sname_vs_louvain_stacked_bar_plot.svg', format='svg', bbox_inches='tight')
+plt.savefig('sname_vs_leiden_stacked_bar_plot.svg', format='svg', bbox_inches='tight')
 plt.show()
 ```
 
@@ -529,6 +389,6 @@ markers = ['Nt5e', 'Cd80', 'Pdcd1lg2', 'Aicda', 'Igha', 'Ighd',
            'Ighg1', 'Ighg2b', 'Bcl6', 'Nr4a1', 'Bhlhe41', 'Irf7', 
            'Tbx21', 'Cd1d1', 'Prdm1', 'Mki67', 'Cd3e' , 'Cd14']
 if not GOIS[0] == "GenesOfInterest":
-    scanpy.pl.dotplot(adata, GOIS, groupby='louvain', dendrogram=True)
+    scanpy.pl.dotplot(adata, GOIS, groupby='leiden', dendrogram=True)
 ```
 

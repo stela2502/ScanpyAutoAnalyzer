@@ -193,6 +193,10 @@ def write_data_to_directory(adata, output_dir):
 
 
 def impute_expression_data( adata, output_dir ):
+    """
+    Uses scvi.model.SCVI to impute the expression data and adds that (model.posterior_predictive_sample) as the adata.X sparse matrix.
+    In addition the imputed data is saved as 10X matrix.mtx, features.tsv and barcodes.tsv file triplet.
+    """
 
     # Step 1: Get the number of CPU cores
     num_cores = os.cpu_count()
@@ -211,3 +215,76 @@ def impute_expression_data( adata, output_dir ):
     adata.X = model.posterior_predictive_sample(adata, n_samples=1).to_scipy_sparse()
     write_data_to_directory( adata, output_dir )
 
+
+def grouped_obs_mean(adata, group_key, layer=None, gene_symbols=None):
+    """
+    calculate the mean expression for all genes in all groups
+    """
+    if layer is not None:
+        getX = lambda x: x.layers[layer]
+    else:
+        getX = lambda x: x.X
+    if gene_symbols is not None:
+        new_idx = adata.var[idx]
+    else:
+        new_idx = adata.var_names
+
+    grouped = adata.obs.groupby(group_key)
+    out = pd.DataFrame(
+        np.zeros((adata.shape[1], len(grouped)), dtype=np.float64),
+        columns=list(grouped.groups.keys()),
+        index=adata.var_names
+    )
+
+    for group, idx in grouped.indices.items():
+        X = getX(adata[idx])
+        out[group] = np.ravel(X.mean(axis=0, dtype=np.float64))
+    return out
+
+
+def mergeClosest( adata, group = 'louvain11_merged.9', cut = 0.9 ):
+    """ 
+    create mean expression per group, correlate all mean groups and scan all groups for corr > cut.
+    The first group with cor > cut will merge with the best correlating groups available.
+    Only one group will be merged at a time.
+    """
+    print (str(len(Counter(adata.obs[group])))+ " -", end=" ")
+    df = grouped_obs_mean( adata, group )
+    df = df.corr()
+    for i in range(0,df.shape[0]):
+        df.at[df.columns[i],df.columns[i]] = 0
+    #print("processing groups")
+    #print (df)
+    for i in range( 0, len(df.columns)):
+        i = df.columns[i]
+        col = df[i]
+        #print ( "max value="+ str( max( col )) )
+        if max( col ) >= cut:
+            gr = np.array(adata.obs[group])
+            m = [df.columns[a] for a in range(0, len(col)) if col[a] == max(col) ]
+            m = m[0]
+            #print ("max value="+str(max[col])+ " merge " + str(m) + " to "+ str(i)+".")
+            for x in range(0,len(adata.obs[group])):
+                    if str(gr[x]) == i:
+                        #print ( "changed" + str(x)+ " change " + gr[x]  + " to "+ str(m))
+                        gr[x] = m
+            #type(gr)
+            #print("finished")
+            adata.obs[group] = gr
+            return True
+    print ( "no cluster did match to any other cluster with cor > "+ str(cut) )
+    return False
+
+
+def reIDgroup( adata, group ):
+    """
+    Re-set the cluster ids to be in the tange of 0-max cluster id
+    """
+    gr = np.array(adata.obs[group])
+    n = 0
+    for i in set(adata.obs[group]):
+        for x in range(0,len(adata.obs[group])):
+            if adata.obs[group][x] == i:
+                gr[x] = n
+        n = n +1
+    adata.obs[group+'_renamed'] = gr

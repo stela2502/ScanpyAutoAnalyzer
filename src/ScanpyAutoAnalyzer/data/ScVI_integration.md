@@ -20,13 +20,25 @@ import scvi
 import torch
 from rich import print
 from scib_metrics.benchmark import Benchmarker
+import anndata
 
 print("Last run with scvi-tools version:", scvi.__version__)
 print('\n'.join(f'{m.__name__}=={m.__version__}' for m in globals().values() if getattr(m, '__version__', None)))
 ```
 
+```python tags=["parameters"]
+ifile = "test.h5ad"
+ofile = "out.h5ad"
+```
+
 ```python
-scvi.model.SCVI.setup_anndata(adata, batch_key="Most likely name")
+adata = anndata.read_h5ad( ifile )
+adata
+```
+
+```python
+#scvi.model.SCVI.setup_anndata(adata, batch_key="Most likely name")
+scvi.model.SCVI.setup_anndata( adata )
 ```
 
 ```python
@@ -54,6 +66,13 @@ adata.obsm[SCVI_MDE_KEY] = scvi.model.utils.mde(adata.obsm[SCVI_LATENT_KEY], emb
 ```
 
 ```python
+adata.write( ofile )
+! ls -lh {ofile}
+
+stop("the following parts are just examples")
+```
+
+```python
 sc.pl.embedding(
     adata,
     basis= "X_scVI_MDE" ,
@@ -75,3 +94,4 @@ for gene in ["Most likely name", ]:
         save="_"+gene
     )
 ```
+
