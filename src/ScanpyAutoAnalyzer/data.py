@@ -9,6 +9,8 @@ import papermill as pm
 import re
 import ast
 
+
+
 def run_with_parameters(name, output="./", parameters=None):
     """
     Converts one of the intern scripts to a Jupyter notebook, extracts parameters, checks for required values, 
@@ -22,10 +24,19 @@ def run_with_parameters(name, output="./", parameters=None):
     Raises:
         ValueError: If any required parameters are missing from the `parameters` argument.
     """
+    md_file = getScript4(name)
+    run_script_with_parameters( md_file, output, parameters)
+
+
+def run_script_with_parameters(md_file, output="./", parameters=None):
+
+    """
+    Will convert the markdown script you proivide into a jupyter notebook, extracts parameters, checks for required values,
+    and execute that using papermill.
+    """
     
     # Step 1: Convert markdown to notebook format
 
-    md_file = getScript4( name )
     notebook = jupytext.read(md_file)
 
     # Ensure parameters dictionary is provided

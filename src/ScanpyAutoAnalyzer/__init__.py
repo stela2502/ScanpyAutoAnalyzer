@@ -16,6 +16,7 @@ __all__ = [
     "write_data_to_directory",
     "impute_expression_data",
     "run_with_parameters",
+    "run_script_with_parameters",
     "mergeClosest",
     "reIDgroup"
 ]
