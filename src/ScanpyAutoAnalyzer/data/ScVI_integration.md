@@ -12,7 +12,7 @@ jupyter:
     name: python3
 ---
 
-Integrate several adata objects using ScVi
+Integrate several adata objects using ScVi. Benefits from GPU compute.
 
 ```python
 import scanpy as sc

@@ -1,4 +1,4 @@
-An example of how to impute expression values in a 10X output.
+An example of how to impute expression values in a 10X output. Benefits from GPU compute.
 
 ```python
 %load_ext autotime
