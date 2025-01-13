@@ -51,6 +51,7 @@ anndata
 ```
 
 ```python
+resolution = 10 # way too high!
 key = f"leiden_{resolution}"
 target = f"{key}_{cut}"
 scanpy.tl.leiden( adata, resolution = resolution ,key_added=key)

@@ -1,4 +1,6 @@
-
+import re
+import scanpy
+import pandas as pd
 
 def addSampleDataRust( adata, sname, sampleInfo ):
     """Add the sample information obtained by either running demux10x or quantifyRhapsody to an anndata object"""
@@ -74,6 +76,10 @@ def testGene(x, MT, RP):
         r = False
     return (r)
 
+    
+# Example usage:
+# Assuming you have an AnnData object `adata` and have run `sc.tl.rank_genes_groups` already:
+# write_top_genes_per_cluster(adata, n_top_genes=20, output_file="top_genes.csv")
 def write_top_genes_per_cluster(adata, stats_name, n_top_genes=20, output_file="top_genes_per_cluster.csv"):
     """
     Extracts the top `n_top_genes` highly expressed genes per cluster from a Scanpy `AnnData` object
@@ -102,11 +108,6 @@ def write_top_genes_per_cluster(adata, stats_name, n_top_genes=20, output_file="
 
     print(f"Top {n_top_genes} genes per cluster have been written to {output_file}")
 
-# Example usage:
-# Assuming you have an AnnData object `adata` and have run `sc.tl.rank_genes_groups` already:
-# write_top_genes_per_cluster(adata, n_top_genes=20, output_file="top_genes.csv")
-
-
 
 def write_stats_tables( adata, key_added,cn ="louvain" ):
     """
@@ -129,13 +130,16 @@ def write_stats_tables( adata, key_added,cn ="louvain" ):
         os.mkdir(f"{key_added}") 
     except OSError as error: 
         print(error)  
-
+    safe_key = re.sub(r'[<>:"/\\|?*\s]', '_', key_added)
     for i in adata.obs[cn].unique():
         table = {}
         for j in columns:
             #print(f"Analyszing column {diff_results[j]} {i}")
             table[j] = pd.DataFrame(diff_results[j])[str(i)]
-        table = pd.DataFrame(table).to_csv(f"{key_added}/{cn}_cluster_{i}.csv")
+
+        safe_cn = re.sub(r'[<>:"/\\|?*\s]', '_', cn)
+        safe_i = re.sub(r'[<>:"/\\|?*\s]', '_', i)
+        table = pd.DataFrame(table).to_csv(f"{safe_key}/{safe_cn}_cluster_{save_i}.csv")
 
 
 
