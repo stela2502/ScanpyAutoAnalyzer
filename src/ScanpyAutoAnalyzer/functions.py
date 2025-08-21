@@ -1,6 +1,127 @@
 import re
 import scanpy
 import pandas as pd
+import os
+import numpy as np
+
+def write_pseudobulk_stats_tables( adata, key_added, cluster_key="leiden", min_pseudosamples=10, cells_per_pseudo=50, agg="mean", random_state=42 ):
+    """
+    Creates pseudo-bulk samples per cluster, performs differential expression,
+    writes tables for each cluster, and stores the results in the original adata.uns.
+    """
+    # --- Step 1: create pseudobulk ---
+    pseudo_adata = create_pseudobulk(
+        adata,
+        cluster_key=cluster_key,
+        min_pseudosamples=min_pseudosamples,
+        cells_per_pseudo=cells_per_pseudo,
+        agg=agg,
+        random_state=random_state
+    )
+
+    # --- Step 2: run DE on pseudo-bulk ---
+    scanpy.tl.rank_genes_groups(
+        pseudo_adata,
+        groupby=cluster_key,
+        key_added=key_added,
+        method='wilcoxon',
+    )
+
+    # --- Step 3: save overview plot ---
+    scanpy.pl.rank_genes_groups(pseudo_adata, key=key_added, save=f"_{key_added}_overview")
+
+    # --- Step 4: write tables per cluster ---
+    diff_results = pseudo_adata.uns[key_added]
+    columns = ['names', 'scores', 'pvals', 'pvals_adj', 'logfoldchanges']
+    
+    try:
+        os.makedirs(f"{key_added}", exist_ok=True)
+    except OSError as e:
+        print(e)
+    
+    safe_key = re.sub(r'[<>:"/\\|?*\s]', '_', key_added)
+    for cluster in pseudo_adata.obs[cluster_key].unique():
+        table = {}
+        for col in columns:
+            table[col] = pd.DataFrame(diff_results[col])[str(cluster)]
+        safe_cluster = re.sub(r'[<>:"/\\|?*\s]', '_', cluster)
+        safe_cn = re.sub(r'[<>:"/\\|?*\s]', '_', cluster_key)
+        table_df = pd.DataFrame(table)
+        table_df.to_csv(f"{safe_key}/{safe_cn}_cluster_{safe_cluster}.csv")
+
+    # --- Step 5: store DE results in original adata ---
+    if "pseudo_bulk_DE" not in adata.uns:
+        adata.uns["pseudo_bulk_DE"] = {}
+    adata.uns["pseudo_bulk_DE"][key_added] = pseudo_adata.uns[key_added]
+
+    print(f"Pseudo-bulk DE analysis complete. Results stored under adata.uns['pseudo_bulk_DE']['{key_added}'].")
+
+def create_pseudobulk(adata, cluster_key='leiden', min_pseudosamples=10, cells_per_pseudo=50, agg='mean', random_state=None):
+    """
+    Create pseudo-bulk samples from single-cell data.
+    
+    Parameters
+    ----------
+    adata : AnnData
+        Single-cell AnnData object.
+    cluster_key : str
+        Column in adata.obs with cluster labels (e.g., 'leiden').
+    min_pseudosamples : int
+        Minimum number of pseudo-samples per cluster.
+    cells_per_pseudo : int
+        Target number of cells per pseudo-sample.
+    agg : str
+        Aggregation method: 'mean' or 'sum'.
+    random_state : int or None
+        Random seed for reproducibility.
+        
+    Returns
+    -------
+    pseudo_adata : AnnData
+        AnnData object with pseudo-bulk samples as observations.
+    """
+    if random_state is not None:
+        np.random.seed(random_state)
+    
+    clusters = adata.obs[cluster_key].unique()
+    pseudo_data_list = []
+    pseudo_obs = []
+    
+    for cl in clusters:
+        cells = adata.obs_names[adata.obs[cluster_key] == cl]
+        n_cells = len(cells)
+        
+        # Determine number of pseudo-samples
+        n_pseudo = max(min_pseudosamples, n_cells // cells_per_pseudo)
+        n_pseudo = min(n_pseudo, n_cells)  # cannot exceed number of cells
+        
+        # Shuffle cells
+        shuffled = np.random.permutation(cells)
+        
+        # Split cells into pseudo-samples
+        pseudo_samples = np.array_split(shuffled, n_pseudo)
+        
+        for i, pseudo in enumerate(pseudo_samples):
+            # Aggregate expression
+            X_subset = adata[pseudo].X
+            if agg == 'mean':
+                mean_counts = X_subset.mean(axis=0)
+            elif agg == 'sum':
+                mean_counts = X_subset.sum(axis=0)
+            else:
+                raise ValueError("agg must be 'mean' or 'sum'")
+            
+            # Handle sparse matrices
+            if hasattr(mean_counts, "A1"):
+                mean_counts = mean_counts.A1
+            
+            pseudo_data_list.append(mean_counts)
+            pseudo_obs.append(f"{cl}")
+    
+    pseudo_matrix = np.vstack(pseudo_data_list)
+    pseudo_adata = scanpy.AnnData(X=pseudo_matrix, obs=pd.DataFrame({cluster_key: pseudo_obs}), var=adata.var.copy())
+    
+    return pseudo_adata
 
 def addSampleDataRust( adata, sname, sampleInfo ):
     """Add the sample information obtained by either running demux10x or quantifyRhapsody to an anndata object"""
@@ -94,11 +215,15 @@ def write_top_genes_per_cluster(adata, stats_name, n_top_genes=20, output_file="
 
 
     # Check if the `rank_genes_groups` function has been run
-    if stats_name not in adata.uns:
-        raise ValueError(f"No {stats_name} results found in the AnnData object. Please run `sc.tl.rank_genes_groups()` first.")
-
-    # Get the ranked genes for each group
-    ranked_genes = pd.DataFrame(adata.uns[ stats_name ]['names']).head(n_top_genes)
+    if stats_name in adata.uns:
+        ranked_genes = pd.DataFrame(adata.uns[ stats_name ]['names']).head(n_top_genes)
+    elif 'pseudo_bulk_DE' in adata.uns and stats_name in adata.uns["pseudo_bulk_DE"]:
+        ranked_genes = pd.DataFrame(adata.uns["pseudo_bulk_DE"][ stats_name ]['names']).head(n_top_genes)
+    else:
+        raise ValueError(
+           f"No {stats_name} results found in the AnnData object. "
+            "Please run `sc.tl.rank_genes_groups()` or pseudobulk DE first."
+        )
 
     with open(output_file, 'w') as f:
         # Write top genes for each cluster
@@ -138,8 +263,8 @@ def write_stats_tables( adata, key_added,cn ="louvain" ):
             table[j] = pd.DataFrame(diff_results[j])[str(i)]
 
         safe_cn = re.sub(r'[<>:"/\\|?*\s]', '_', cn)
-        safe_i = re.sub(r'[<>:"/\\|?*\s]', '_', i)
-        table = pd.DataFrame(table).to_csv(f"{safe_key}/{safe_cn}_cluster_{save_i}.csv")
+        safe_i = re.sub(r'[<>:"/\\|?*\s]', '_', i) or "__"
+        table = pd.DataFrame(table).to_csv(f"{safe_key}/{safe_cn}_cluster_{safe_i}.csv")
 
 
 
