@@ -74,6 +74,14 @@ print('\n'.join(f'{m.__name__}=={m.__version__}' for m in globals().values() if 
 help("ScanpyAutoAnalyzer")
 ```
 
+```python
+sys.path.append('/home/stefanl/import/')
+
+if "functions" in sys.modules:
+    print("Removing old function module")
+    del sys.modules["functions"]
+import function
+```
 
 ```python        
 
