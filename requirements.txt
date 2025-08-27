@@ -3,3 +3,11 @@ gzip
 papermill
 jupytext
 re
+scanpy
+pandas
+numpy
+seaborn
+matplotlib
+colorsys
+anndata
+scvelo
