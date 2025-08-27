@@ -9,7 +9,58 @@ import matplotlib.colors as mcolors
 from matplotlib.lines import Line2D
 import colorsys
 import anndata
+import scvelo as scv
 
+
+
+def add_cell_types_from_dict(adata, cluster_key, cell_types_dict, new_key="cell_type"):
+    """
+    Adds cell type annotations to an AnnData object based on a cluster→cell type dictionary.
+    Also assigns colors to the new cell_type column based on the cluster colors.
+
+    Parameters
+    ----------
+    adata : AnnData
+        The AnnData object containing the clustering results.
+    cluster_key : str
+        The key in adata.obs that contains cluster assignments (e.g., 'leiden').
+    cell_types_dict : dict
+        Dictionary mapping cluster IDs (as strings) to cell types.
+    new_key : str, optional
+        The name of the new column in adata.obs where cell types will be stored. Default is 'cell_type'.
+
+    Returns
+    -------
+    AnnData
+        The same AnnData object with new annotations and colors added.
+    """
+    
+    # Ensure cluster_key exists
+    if cluster_key not in adata.obs:
+        raise KeyError(f"{cluster_key} not found in adata.obs")
+
+    # Map clusters to cell types
+    adata.obs[new_key] = adata.obs[cluster_key].map(cell_types_dict).astype("category")
+
+    # Copy colors from cluster_key to new_key
+    if f"{cluster_key}_colors" in adata.uns:
+        cluster_colors = adata.uns[f"{cluster_key}_colors"]
+        clusters = adata.obs[cluster_key].cat.categories
+
+        # Map cell types to the corresponding cluster colors
+        cell_type_to_color = {
+            cell_types_dict[cl]: color
+            for cl, color in zip(clusters, cluster_colors)
+            if cl in cell_types_dict
+        }
+
+        # Assign colors to new cell_type column
+        adata.uns[f"{new_key}_colors"] = [
+            cell_type_to_color[ct] for ct in adata.obs[new_key].cat.categories
+        ]
+
+    return adata
+    
 
 def generate_distinct_shades(base_hex, n):
     """
@@ -148,7 +199,7 @@ def summary_heatmap(df, cluster_key='leiden', experiment=None, save_path=None):
         save_path = f"_{experiment}_{cluster_key}_mean_cells.svg"
 
     # Plot heatmap
-    sc.pl.heatmap(
+    scanpy.pl.heatmap(
         adata_pseudo,
         var_names=adata_pseudo.var_names,
         swap_axes=True,
@@ -454,7 +505,7 @@ def preprocess( adata, drop_ribosomal=True, drop_mitochondrial=True, minUMI=1000
         raise ValueError("`adata.X` is empty! Did you load counts into your AnnData object?")
 
     # 2. Compute QC metrics (n_genes_by_counts, total_counts, pct_counts_mt, etc.)
-    sc.pp.calculate_qc_metrics(adata, inplace=True)
+    scanpy.pp.calculate_qc_metrics(adata, inplace=True)
     print("[INFO] QC metrics calculated.")
 
     # 3. Compile regex for gene filtering
@@ -479,28 +530,28 @@ def preprocess( adata, drop_ribosomal=True, drop_mitochondrial=True, minUMI=1000
 
     # 6. Filter cells based on UMI and gene count thresholds
     adata = adata[adata.obs['geneSum'] > minUMI]
-    sc.pp.filter_cells(adata, min_genes=minFeatures)
+    scanpy.pp.filter_cells(adata, min_genes=minFeatures)
     print(f"[INFO] Remaining cells after filtering: {adata.n_obs}")
 
     # 7. Normalize and log-transform
-    sc.pp.downsample_counts(adata, counts_per_cell=minUMI)
+    scanpy.pp.downsample_counts(adata, counts_per_cell=minUMI)
     scv.pp.log1p(adata)
     print("[INFO] Normalization & log-transformation done.")
 
     # 8. Drop genes with zero counts post-filtering
-    sc.pp.filter_genes(adata, min_counts=1)
+    scanpy.pp.filter_genes(adata, min_counts=1)
 
     # 9. Identify highly variable genes
-    sc.pp.highly_variable_genes(adata, n_top_genes=n_highly_significant)
+    scanpy.pp.highly_variable_genes(adata, n_top_genes=n_highly_significant)
     print(f"[INFO] Selected {n_highly_significant} highly variable genes.")
 
     # 10. Compute neighbors & UMAP embedding
-    sc.pp.neighbors(adata)
-    sc.tl.umap(adata, n_components=dimensions)
+    scanpy.pp.neighbors(adata)
+    scanpy.tl.umap(adata, n_components=dimensions)
     print(f"[INFO] UMAP computed with {dimensions} dimensions.")
 
     # 11. Cluster using Leiden
-    sc.tl.leiden(adata, resolution=resolution)
+    scanpy.tl.leiden(adata, resolution=resolution)
     print(f"[INFO] Leiden clustering done (resolution={resolution}).")
 
     return adata
@@ -706,7 +757,7 @@ def testGene(x, MT, RP):
 
     
 # Example usage:
-# Assuming you have an AnnData object `adata` and have run `sc.tl.rank_genes_groups` already:
+# Assuming you have an AnnData object `adata` and have run `scanpy.tl.rank_genes_groups` already:
 # write_top_genes_per_cluster(adata, n_top_genes=20, output_file="top_genes.csv")
 def write_top_genes_per_cluster(adata, stats_name, n_top_genes=20, output_file="top_genes_per_cluster.csv"):
     """
@@ -729,7 +780,7 @@ def write_top_genes_per_cluster(adata, stats_name, n_top_genes=20, output_file="
     else:
         raise ValueError(
            f"No {stats_name} results found in the AnnData object. "
-            "Please run `sc.tl.rank_genes_groups()` or pseudobulk DE first."
+            "Please run `scanpy.tl.rank_genes_groups()` or pseudobulk DE first."
         )
     ret = {}
     with open(output_file, 'w') as f:
