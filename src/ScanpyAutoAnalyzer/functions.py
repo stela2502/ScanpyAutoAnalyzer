@@ -13,7 +13,7 @@ import scvelo as scv
 
 
 
-def add_cell_types_from_dict(adata, cluster_key, cell_types_dict, new_key="cell_type"):
+def add_cell_types_from_dict(adata, cluster_key, cell_types_dict, new_key="cell_type", color_map=None):
     """
     Adds cell type annotations to an AnnData object based on a cluster→cell type dictionary.
     Also assigns colors to the new cell_type column based on the cluster colors.
@@ -28,6 +28,8 @@ def add_cell_types_from_dict(adata, cluster_key, cell_types_dict, new_key="cell_
         Dictionary mapping cluster IDs (as strings) to cell types.
     new_key : str, optional
         The name of the new column in adata.obs where cell types will be stored. Default is 'cell_type'.
+    color_map : dict, optional
+        Optional dictionary mapping cluster IDs to colors. Overrides automatic cluster color mapping.
 
     Returns
     -------
@@ -42,8 +44,17 @@ def add_cell_types_from_dict(adata, cluster_key, cell_types_dict, new_key="cell_
     # Map clusters to cell types
     adata.obs[new_key] = adata.obs[cluster_key].map(cell_types_dict).astype("category")
 
-    # Copy colors from cluster_key to new_key
-    if f"{cluster_key}_colors" in adata.uns:
+    # Determine colors
+    if color_map is not None:
+        # Use the provided color_map
+        cell_type_to_color = {}
+        for cl, color in color_map.items():
+            if cl in cell_types_dict:
+                cell_type_to_color[cell_types_dict[cl]] = color
+        adata.uns[f"{new_key}_colors"] = [cell_type_to_color[ct] for ct in adata.obs[new_key].cat.categories]
+
+    elif f"{cluster_key}_colors" in adata.uns:
+        # Copy colors from cluster_key to new_key
         cluster_colors = adata.uns[f"{cluster_key}_colors"]
         clusters = adata.obs[cluster_key].cat.categories
 
@@ -60,7 +71,61 @@ def add_cell_types_from_dict(adata, cluster_key, cell_types_dict, new_key="cell_
         ]
 
     return adata
+
+def update_obs_colors(adata, group_key, color_dict, new_key=None):
+    """
+    Assign colors to an AnnData obs column based on a mapping dictionary.
+
+    Parameters
+    ----------
+    adata : AnnData
+        The AnnData object.
+    group_key : str
+        Name of the obs column containing group labels (clusters or cell types).
+    color_dict : dict
+        Dictionary mapping group labels to color codes (hex or named colors).
+    new_key : str, optional
+        Name of the color entry in adata.uns. Defaults to f"{group_key}_colors".
+
+    Returns
+    -------
+    AnnData
+        Same AnnData object with colors added to adata.uns.
+
+    Raises
+    ------
+    KeyError
+        If `group_key` is not in adata.obs.
+    ValueError
+        If any group in adata.obs[group_key] does not exist in `color_dict`.
+    """
+    import pandas as pd
+
+    if group_key not in adata.obs:
+        raise KeyError(f"{group_key} not found in adata.obs")
+
+    if new_key is None:
+        new_key = f"{group_key}_colors"
+
+    groups = adata.obs[group_key]
+
+    # Check for missing groups
+    missing = set(groups.unique()) - set(color_dict.keys())
+    if missing:
+        raise ValueError(f"The following groups have no color assigned: {missing}")
+
     
+
+    # Save colors to adata.uns for plotting
+    # Ensure the order matches categories if it's a categorical column
+    if pd.api.types.is_categorical_dtype(groups):
+        adata.uns[new_key] = [color_dict[cat] for cat in groups.cat.categories]
+    else:
+        # Map groups to colors
+        color_series = groups.map(color_dict)
+        adata.uns[new_key] = color_series.unique().tolist()
+
+    return adata 
 
 def generate_distinct_shades(base_hex, n):
     """
@@ -905,6 +970,47 @@ def impute_expression_data( adata, output_dir ):
     write_data_to_directory( adata, output_dir )
 
 
+def converge_cluster_merging( adata, group_key, cutoff=0.9, layer=None, gene_symbols=None, key_added=None, verbose=True ):
+    """
+    Iteratively merge clusters until no two cluster mean expression profiles
+    exceed the given correlation cutoff.
+
+    Parameters
+    ----------
+    adata : AnnData
+        AnnData object with clustering in .obs[group_key].
+    group_key : str
+        Column in adata.obs with initial cluster labels.
+    cutoff : float
+        Correlation threshold. Clusters with corr >= cutoff are merged.
+    layer : str, optional
+        Which layer to use instead of adata.X.
+    gene_symbols : str, optional
+        Column in adata.var to use as feature index instead of var_names.
+    key_added : str, optional
+        Where to store the merged cluster labels. Defaults to group_key + "_merged".
+    verbose : bool
+        Print progress if True.
+
+    Returns
+    -------
+    dict
+        Mapping of old cluster labels → new sequential IDs.
+    """
+
+    if key_added is None:
+        key_added = group_key + f"_merged{cutoff}"
+    adata.obs[key_added] = adata.obs[group_key].astype(str).copy()
+
+
+    # iterative merging
+    while True:
+        mean_exp = grouped_obs_mean(adata, key_added, layer, gene_symbols)
+        if not mergeClosest( adata, key_added, cutoff ):
+            break
+
+
+
 def grouped_obs_mean(adata, group_key, layer=None, gene_symbols=None):
     """
     calculate the mean expression for all genes in all groups
@@ -929,7 +1035,9 @@ def grouped_obs_mean(adata, group_key, layer=None, gene_symbols=None):
         X = getX(adata[idx])
         out[group] = np.ravel(X.mean(axis=0, dtype=np.float64))
     return out
-
+    reIDgroup( adata, group_key )
+    adata.obs[group_key] = adata.obs[group_key+'_renamed']
+    del adata.obs[group_key+'_renamed']
 
 def mergeClosest( adata, group = 'louvain11_merged.9', cut = 0.9 ):
     """ 
@@ -937,7 +1045,7 @@ def mergeClosest( adata, group = 'louvain11_merged.9', cut = 0.9 ):
     The first group with cor > cut will merge with the best correlating groups available.
     Only one group will be merged at a time.
     """
-    print (str(len(Counter(adata.obs[group])))+ " -", end=" ")
+    #print (str(len(Counter(adata.obs[group])))+ " -", end=" ")
     df = grouped_obs_mean( adata, group )
     df = df.corr()
     for i in range(0,df.shape[0]):
@@ -952,6 +1060,7 @@ def mergeClosest( adata, group = 'louvain11_merged.9', cut = 0.9 ):
             gr = np.array(adata.obs[group])
             m = [df.columns[a] for a in range(0, len(col)) if col[a] == max(col) ]
             m = m[0]
+            print( f"m{i}->{m}", end=",", flush=True)
             #print ("max value="+str(max[col])+ " merge " + str(m) + " to "+ str(i)+".")
             for x in range(0,len(adata.obs[group])):
                     if str(gr[x]) == i:
