@@ -10,7 +10,7 @@ from matplotlib.lines import Line2D
 import colorsys
 import anndata
 import scvelo as scv
-
+from scipy import sparse
 
 
 def add_cell_types_from_dict(adata, cluster_key, cell_types_dict, new_key="cell_type", color_map=None):
@@ -969,6 +969,47 @@ def impute_expression_data( adata, output_dir ):
     adata.X = model.posterior_predictive_sample(adata, n_samples=1).to_scipy_sparse()
     write_data_to_directory( adata, output_dir )
 
+
+def scatter_safe(adata, color, **kwargs):
+    """
+    Wrapper around scvelo.pl.scatter that:
+    1. Skips genes that are not in the dataset.
+    2. Skips genes with zero expression in all cells.
+    
+    Parameters
+    ----------
+    adata : AnnData
+        Annotated data matrix.
+    color : list or str
+        Gene(s) or feature(s) to plot.
+    **kwargs : dict
+        Other keyword arguments passed to scv.pl.scatter.
+    """
+    # Convert single string to list for uniform processing
+    if isinstance(color, str):
+        color = [color]
+    
+    color_filtered = []
+    for gene in color:
+        if gene in adata.obs:
+            # Always keep obs features
+            color_filtered.append(gene)
+        elif gene in adata.var_names:
+            # Check if gene has any nonzero expression
+            Xcol = adata[:, gene].X
+            if hasattr(Xcol, "toarray"):  # sparse
+                nonzero = np.any(Xcol.toarray())
+            else:  # dense
+                nonzero = np.any(Xcol)
+            if nonzero:
+                color_filtered.append(gene)
+        # silently skip missing
+    
+    if not color_filtered:
+        print("No valid genes/features to plot.")
+        return
+    
+    scv.pl.scatter(adata, color=color_filtered, **kwargs)
 
 def converge_cluster_merging( adata, group_key, cutoff=0.9, layer=None, gene_symbols=None, key_added=None, verbose=True ):
     """
