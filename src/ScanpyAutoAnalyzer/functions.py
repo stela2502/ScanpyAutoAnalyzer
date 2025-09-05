@@ -622,6 +622,71 @@ def preprocess( adata, drop_ribosomal=True, drop_mitochondrial=True, minUMI=1000
     return adata
 
 
+def gene_coexpression_store(ad, gene, subset_cells=None, top_n=10, store_in_var=True):
+    """
+    Compute co-expressed genes with a given gene in a Scanpy AnnData object,
+    and optionally store the results in ad.uns and ad.var.
+
+    Parameters
+    ----------
+    ad : AnnData
+        The single-cell dataset (log-normalized recommended).
+    gene : str
+        Gene of interest (e.g., "NCAM1").
+    subset_cells : str or list, optional
+        Column name in ad.obs to filter cells (e.g., 'cell_type') 
+        or boolean array/list to subset cells.
+    top_n : int
+        Number of top positively co-expressed genes to return.
+    store_in_var : bool
+        Whether to store correlations in ad.var['coexpression_with_<gene>'].
+
+    Returns
+    -------
+    corr_df : pd.DataFrame
+        DataFrame with genes and their Pearson correlation to the target gene, sorted descending.
+    """
+    # Optionally subset cells
+    if subset_cells is not None:
+        if isinstance(subset_cells, str):
+            if subset_cells not in ad.obs.columns:
+                raise ValueError(f"{subset_cells} not found in ad.obs")
+            ad_sub = ad[ad.obs[subset_cells].astype(bool)].copy()
+        else:  # assume boolean list/array
+            ad_sub = ad[subset_cells].copy()
+    else:
+        ad_sub = ad
+
+    # Ensure the gene exists
+    if gene not in ad_sub.var_names:
+        raise ValueError(f"{gene} not found in dataset")
+
+    # Expression matrix as dense numpy array
+    X = ad_sub.X.toarray() if hasattr(ad_sub.X, "toarray") else ad_sub.X
+
+    # Gene index
+    idx = ad_sub.var_names.get_loc(gene)
+
+    # Vectorized Pearson correlation
+    x = X[:, idx]
+    x_centered = x - x.mean()
+    X_centered = X - X.mean(axis=0)
+    corr = (X_centered.T @ x_centered) / (np.sqrt((X_centered**2).sum(axis=0)) * np.sqrt((x_centered**2).sum()))
+    
+    corr_df = pd.DataFrame({'gene': ad_sub.var_names, 'pearson_corr': corr})
+    corr_df = corr_df.sort_values('pearson_corr', ascending=False).reset_index(drop=True)
+
+    # Store results in AnnData
+    ad.uns.setdefault('coexpression', {})
+    ad.uns['coexpression'][gene] = corr_df
+
+    if store_in_var:
+        col_name = f'coexpression_with_{gene}'
+        ad.var[col_name] = corr_df.set_index('gene').reindex(ad.var_names)['pearson_corr']
+
+    return corr_df.head(top_n)
+
+
 def write_pseudobulk_stats_tables( adata, key_added, cluster_key="leiden", min_pseudosamples=10, cells_per_pseudo=50, agg="mean", random_state=42 ):
     """
     Creates pseudo-bulk samples per cluster, performs differential expression,

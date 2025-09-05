@@ -28,6 +28,7 @@ from IPython.display import Markdown
 info(ScanpyAutoAnalyzer)
 # The avaibale examples
 Markdown(info())
+```
 
 # Install
 

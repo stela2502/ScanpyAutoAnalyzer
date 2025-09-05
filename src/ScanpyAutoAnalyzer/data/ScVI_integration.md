@@ -59,10 +59,11 @@ sc.pp.neighbors(adata, use_rep=SCVI_LATENT_KEY)
 sc.tl.leiden(adata)
 
 SCVI_MDE_KEY = "X_scVI_MDE"
-adata.obsm[SCVI_MDE_KEY] = scvi.model.utils.mde(adata.obsm[SCVI_LATENT_KEY])
+adata.obsm[SCVI_MDE_KEY] = pymde.preserve_neighbors(adata.obsm[SCVI_LATENT_KEY]).embed()
 
 SCVI_MDE_KEY = "X_scVI_MDE_3d"
-adata.obsm[SCVI_MDE_KEY] = scvi.model.utils.mde(adata.obsm[SCVI_LATENT_KEY], embedding_dim=3)
+adata.obsm[SCVI_MDE_KEY] = pymde.preserve_neighbors(adata.obsm[SCVI_LATENT_KEY], embedding_dim=3).embed()
+
 ```
 
 ```python
