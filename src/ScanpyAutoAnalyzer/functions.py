@@ -658,19 +658,25 @@ def gene_coexpression_store(ad, gene, subset_cells=None, top_n=10, store_in_var=
         ad_sub = ad
 
     # Ensure the gene exists
-    if gene not in ad_sub.var_names:
+    if gene not in ad_sub.var_names and gene not in ad_sub.obs.columns:
         raise ValueError(f"{gene} not found in dataset")
 
     # Expression matrix as dense numpy array
     X = ad_sub.X.toarray() if hasattr(ad_sub.X, "toarray") else ad_sub.X
-
+    
     # Gene index
-    idx = ad_sub.var_names.get_loc(gene)
+    if gene in ad_sub.var_names:
+        idx = ad_sub.var_names.get_loc(gene)
+        x = X[:, idx]    
+    elif gene in ad_sub.obs.columns:
+        idx = ad_sub.obs.columns.get_loc(gene)
+        x = ad_sub.obs[gene].values
+    else:
+        raise ValueError(f"{gene} not found in dataset")
 
-    # Vectorized Pearson correlation
-    x = X[:, idx]
     x_centered = x - x.mean()
     X_centered = X - X.mean(axis=0)
+    # Vectorized Pearson correlation
     corr = (X_centered.T @ x_centered) / (np.sqrt((X_centered**2).sum(axis=0)) * np.sqrt((x_centered**2).sum()))
     
     corr_df = pd.DataFrame({'gene': ad_sub.var_names, 'pearson_corr': corr})

@@ -1,105 +1,163 @@
 # ScanpyAutoAnalyzer
 
-This package was planned as an automation package and has turned into a scratchpad manager for me.
-It is a collection of my Scanpy enhancements. It is nothing fancy, just making ones live a little easier.
+**ScanpyAutoAnalyzer** is a lightweight Python module providing a curated collection of ready-to-use functions for single-cell RNA-seq data analysis using [Scanpy](https://scanpy.readthedocs.io/), [Anndata](https://anndata.readthedocs.io/), and [Scvelo](https://scvelo.readthedocs.io/).  
+It is designed to simplify and standardize preprocessing, visualization, pseudo-bulk aggregation, and cell-type annotation tasks in a reproducible, lab-friendly way.
 
-It contains my exmpale scripts that describe my basic workflow.
+---
 
+## 📦 Installation
 
-# Usage
+You can install directly from GitHub:
 
-How to use it is described [in  this jupyter notebook](./ShortUsageExample.ipynb).
-
-The real power of this tool is to apply an example workflow on any data - like e.g.
-
-```
-InitallyAnalyze( "my_scanpy_h5_file", "my_analyzed_h5ad_file" )
-OverClusterStrategy ( "my_analyzed_h5ad_file" )
+```bash
+pip install git+https://github.com/stela2502/ScanpyAutoAnalyzer.git
 ```
 
-This will take parts of my example md files, convert them into Jupyter notebooks using jupytext and execute the analysis using papermill.
+This automatically installs all required dependencies (`scanpy`, `anndata`, `scvelo`, `pandas`, `matplotlib`, `seaborn`, `numpy`, `scipy`, etc.).
+
+---
+
+## 🧬 Quick Start
+
+Once installed, simply import the functions module:
 
 ```python
+import functions as faa
+import scanpy as sc
 
-from ScanpyAutoAnalyszer import *
-from IPython.display import Markdown
+adata = sc.read_h5ad("my_dataset.h5ad")
 
-#the functions
-info(ScanpyAutoAnalyzer)
-# The avaibale examples
-Markdown(info())
+# Run the built-in preprocessing workflow
+adata = faa.preprocess(adata)
 ```
 
-# Install
+This will perform:
+- QC metric computation
+- Filtering of mitochondrial and ribosomal genes
+- Normalization and log-transformation
+- Identification of highly variable genes
+- UMAP computation and Leiden clustering
 
-I am no Python power user and therfore 'only' a small pip command to install from github:
+---
 
-```
-pip install git+https://github.com/stela2502/ScanpyAutoAnalyzer
-```
+## 🔬 Example Workflows
 
-I am not using anaconda or anything like that, but I am using a Singularity image to capsulate this functionalite.
-The Singularity image is not documented - my bad - and "only" available for Aurora users at the time of this writing.
+### 1. Annotating Cell Types
+```python
+celltype_dict = {
+    "0": "T cells",
+    "1": "B cells",
+    "2": "Myeloid"
+}
 
-# Aurora users
-
-This library is installed in the singularity image SingSingCell/1.1 on aurora-ls2.
-To use this I use command lines like this at the moment:
-
-```
-singularity exec -B/projects:/projects -B/local:/mnt /projects/fs1/common/software/SingSingCell/1.1/SingleCells_v1.1.sif ScanpyAnalysis.py  -i /projects/fs3/stefanl/YangLiu/GSE150774 -r -m -o /projects/fs3/stefanl/YangLiu/GSE150774/GSE150774_AutoAnalysis -n NoRiboNoMito
-```
-
-This script runs on the frontend, but can easily be moved to the blades by putting this command line into a sbatch script (untested).
-
-## more info
-
-The above command line has a logical split into these two elements:
-
-Load the singularity image:
-```
-singularity exec -B/projects:/projects -B/local:/mnt /projects/fs1/common/software/SingSingCell/1.1/SingleCells_v1.1.sif
+adata = faa.add_cell_types_from_dict(adata, cluster_key="leiden", cell_types_dict=celltype_dict)
 ```
 
-And run the command
-```
-ScanpyAnalysis.py  -i /projects/fs3/stefanl/YangLiu/GSE150774 -r -m -o /projects/fs3/stefanl/YangLiu/GSE150774/GSE150774_AutoAnalysis -n NoRiboNoMito
-```
+This adds `adata.obs["cell_type"]` and automatically maps colors based on cluster assignments.
 
-Especially important is to mount the /projects folder in the singularity image and use absolute paths for in- and out-put info.
+---
 
+### 2. Visualizing Data
 
-Help for this one script:
-
-```
-usage: ScanpyAnalysis.py [-h] [-i INPUT] [-o OUTPATH] [-n NAME] [-m] [-r] [-d DIMENSIONS] [-s STATSNAME] [-g GOI [GOI ...]] [-t]
-
-This script runs scanpy analyses based on the lib/ExampleAnalysis.ipynb python notebook. Each run of this script will produce an anndata outfile, a
-directory of stats tables and a filled in python notebook. In short the data is read from raw files, mitochondrial and ribosomal gene contens will be
-collected and both mitochondrial and ribosomal genes can be excluded from the analysis. Cell with less than 1000 UMIs from not mitochondrial and ribosomal
-genes are excluded. Expression is normalized using the scanpy function scanpy.pp.downsample_counts(adata, counts_per_cell= 1000 ). Louvain clusters using
-default parameters will be statisically analzed using the scanpy.tl.rank_genes_groups() function (wilcox).
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -i INPUT, --input INPUT
-                        the infile or in path
-  -o OUTPATH, --outpath OUTPATH
-                        the path where the outfiles should be stored
-  -n NAME, --name NAME  the name of this analysis
-  -m, --mitoEX          exclude mitochondrial transcripts
-  -r, --riboEX          exclude ribosomal transcripts
-  -d DIMENSIONS, --dimensions DIMENSIONS
-                        the umap dimensions to use [2,3], default 2
-  -s STATSNAME, --statsName STATSNAME
-                        the name of the stats out folder
-  -g GOI [GOI ...], --goi GOI [GOI ...]
-                        list of genes of interest (will be plotted on the data)
-  -t, --test            do not run the script
+#### UMAP with Cluster Contours
+```python
+faa.plot_umap_with_cluster_contours(adata, contour_group="leiden", subset_group="cell_type", group_key_selected="T cells")
 ```
 
+#### Summary Heatmap
+```python
+pseudo = faa.compute_cluster_mean_profiles_adata(adata, cluster_key="leiden")
+faa.summary_heatmap(pseudo.to_df(), cluster_key="leiden", experiment="myexp")
+```
 
-The script uses <a href="https://github.com/stela2502/ScanpyAutoAnalyzer/blob/main/src/ScanpyAutoAnalyzer/data/ExampleAnalysis.md">this Markdown document</a> to run the analysis.
+#### Stacked Bar Plot
+```python
+faa.plot_stacked_bar(adata, value_col="geneSum", index_col="sample", label_col="cell_type", color_map=my_colors)
+```
 
+---
 
-I hope you use this!
+### 3. Pseudo-bulk and Differential Expression
+
+Generate pseudo-bulk samples and perform DE analysis per cluster:
+```python
+faa.write_pseudobulk_stats_tables(adata, key_added="pseudo_bulk_DE")
+```
+
+The results are stored in `adata.uns["pseudo_bulk_DE"]` and written to CSV files.
+
+---
+
+### 4. Predicting Cell Types from Marker Genes
+```python
+marker_groups = {
+    "T cells": ["CD3D", "CD3E"],
+    "B cells": ["MS4A1"],
+    "NK cells": ["NKG7"]
+}
+faa.predict_celltype(adata, marker_groups, cluster_key="leiden")
+```
+
+This computes per-cluster marker expression and generates predicted cell-type labels.
+
+---
+
+## 🧠 Additional Utilities
+
+| Function | Description |
+|-----------|-------------|
+| `preprocess` | End-to-end preprocessing workflow with QC, normalization, clustering, and UMAP. |
+| `add_cell_types_from_dict` | Map cluster IDs to cell types and set colors. |
+| `update_obs_colors` | Assign consistent colors to obs categories. |
+| `compute_cluster_mean_profiles_adata` | Generate pseudo-cells by averaging expression within clusters. |
+| `write_pseudobulk_stats_tables` | Perform DE on pseudo-bulk samples and export results. |
+| `plot_stacked_bar`, `plot_dotplot_matrix_legend` | Visual summaries of group-level relationships. |
+| `gene_coexpression_store` | Compute and store co-expressed genes for a given marker. |
+| `predict_celltype` | Infer likely cell-type labels based on marker genes. |
+| `write_data_to_directory` | Export AnnData as 10x-style matrix (MTX + TSVs). |
+
+---
+
+## 🧪 Example Session
+
+```python
+import functions as faa
+import scanpy as sc
+
+# Load data
+adata = sc.read_10x_h5("filtered_feature_bc_matrix.h5")
+
+# Preprocess and cluster
+adata = faa.preprocess(adata)
+
+# Assign cell types and visualize
+cell_types = {"0": "T cells", "1": "B cells", "2": "Monocytes"}
+adata = faa.add_cell_types_from_dict(adata, "leiden", cell_types)
+
+faa.plot_umap_with_cluster_contours(adata, "leiden", "cell_type", "T cells")
+```
+
+---
+
+## 🧭 Philosophy
+
+> “Make high-quality single-cell analysis as straightforward as possible — while keeping every step transparent.”
+
+ScanpyAutoAnalyzer is not a framework, but a **curated toolkit**: every function is meant to be inspected, reused, and adapted for your own analysis pipelines.
+
+---
+
+## 📚 Citation
+
+If you use this module in your research, please cite the repository:
+
+```
+Lang S. (2025) ScanpyAutoAnalyzer: lightweight Scanpy extensions for streamlined single-cell workflows.
+https://github.com/stela2502/ScanpyAutoAnalyzer
+```
+
+---
+
+## 🧩 License
+
+This project is licensed under the **BSD 3-Clause License** – you are free to use, modify, and distribute it with attribution.
