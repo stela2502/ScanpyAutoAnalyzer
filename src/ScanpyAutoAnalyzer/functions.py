@@ -11,6 +11,8 @@ import colorsys
 import anndata
 import scvelo as scv
 from scipy import sparse
+from collections import Counter
+
 
 
 def add_cell_types_from_dict(adata, cluster_key, cell_types_dict, new_key="cell_type", color_map=None):
@@ -935,15 +937,23 @@ def write_stats_tables( adata, key_added,cn ="louvain" ):
     Creates the stats using the 'wilcoxon' method, plots the top genes using scanpy.pl.rank_genes_groups
     and finally writes tab separated tables to a <key_added> foilder.
     """ 
+    # filter all n=1 clusters
+    adata.obs[cn] = adata.obs[cn].astype(str)
+    cluster_sizes = adata.obs[cn].value_counts()
+    bad_clusters = cluster_sizes[cluster_sizes < 2].index.tolist()
+    adata_filt = adata[ ~adata.obs[cn].isin(bad_clusters) ].copy()
 
     scanpy.tl.rank_genes_groups(
-        adata, 
+        adata_filt, 
         groupby   = cn,
         key_added = key_added,
         method    = 'wilcoxon',
     )
 
-    scanpy.pl.rank_genes_groups(adata, key = key_added, save= key_added+"_overview.svg")
+    scanpy.pl.rank_genes_groups(adata_filt, key = key_added, save= key_added+"_overview.svg")
+
+    # copy back to original adata
+    adata.uns[key_added] = adata_filt.uns[key_added]
 
     diff_results = adata.uns[key_added]
     columns = ['names', 'scores', 'pvals', 'pvals_adj', 'logfoldchanges']
@@ -953,14 +963,33 @@ def write_stats_tables( adata, key_added,cn ="louvain" ):
         print(error)  
     safe_key = re.sub(r'[<>:"/\\|?*\s]', '_', key_added)
     for i in adata.obs[cn].unique():
-        table = {}
-        for j in columns:
-            #print(f"Analyszing column {diff_results[j]} {i}")
-            table[j] = pd.DataFrame(diff_results[j])[str(i)]
+        if str(i) in bad_clusters:
+            continue
+        try:
+            table = {}
+            for j in columns:
+                col = diff_results[j]
 
-        safe_cn = re.sub(r'[<>:"/\\|?*\s]', '_', cn)
-        safe_i = re.sub(r'[<>:"/\\|?*\s]', '_', i) or "__"
-        table = pd.DataFrame(table).to_csv(f"{safe_key}/{safe_cn}_cluster_{safe_i}.csv")
+                # If Scanpy could not compute stats (n=1 clusters)
+                if col is None:
+                    raise ValueError(f"No values for column '{j}' (cluster {i}).")
+
+                # Try extracting the column for this group
+                df = pd.DataFrame(col)
+
+                if str(i) not in df.columns:
+                    raise ValueError(f"Cluster {i} missing in column '{j}'.")
+
+                table[j] = df[str(i)]
+
+            # Write only if table is valid
+            safe_cn = re.sub(r'[<>:"/\\|?*\s]', '_', cn)
+            safe_i  = re.sub(r'[<>:"/\\|?*\s]', '_', str(i)) or "__"
+
+            pd.DataFrame(table).to_csv(f"{safe_key}/{safe_cn}_cluster_{safe_i}.csv")
+
+        except Exception as e:
+            print(f"⚠️ Warning: Skipping cluster {i}: {e}")
 
 
 
@@ -1082,6 +1111,70 @@ def scatter_safe(adata, color, **kwargs):
     
     scv.pl.scatter(adata, color=color_filtered, **kwargs)
 
+def overcluster_strategy(
+    adata,
+    resolution=10,
+    target_key=None,
+    min_corr=0.95
+):
+    """
+    Perform high-resolution Leiden overclustering followed by iterative
+    cluster merging based on expression correlation.
+
+    This function is intended to first *overcluster* an AnnData object
+    using a high Leiden resolution, and then repeatedly merge the two
+    most similar clusters until no pair exceeds the given correlation
+    threshold. Finally, the merged clusters are re-indexed to produce
+    clean final labels.
+
+    Parameters
+    ----------
+    adata : AnnData
+        The annotated data matrix. Must contain PCA or neighbor graph
+        already computed (i.e. run `sc.pp.neighbors` before calling).
+    resolution : float, default=10
+        Leiden clustering resolution used for the initial
+        overclustering step. Higher values → more clusters.
+    target_key : str or None, optional
+        Name for the final merged cluster labels stored in
+        `adata.obs[target_key]`.  
+        If None, a default key of the form:
+        `"leiden_{resolution}_{min_corr}"` is used.
+    min_corr : float, default=0.95
+        Correlation cutoff for merging clusters.  
+        Clusters with mean expression Pearson correlation ≥ `min_corr`
+        will be iteratively merged until no such pairs remain.
+
+    Notes
+    -----
+    - The function relies on external helper functions:
+      `mergeClosest(adata, group, cut)` and
+      `reIDgroup(adata, group)` which must be available in the
+      environment.
+    - The function ensures the final cluster labels are strings
+      (not integers) to prevent scanpy from reordering categories.
+
+    Returns
+    -------
+    None
+        The function modifies `adata.obs` in place.
+
+    Examples
+    --------
+    >>> sc.pp.neighbors(adata)
+    >>> overcluster_strategy(adata, resolution=8, min_corr=0.9)
+    >>> adata.obs["leiden_8_0.9"].value_counts()
+    """
+    key = f"leiden_{resolution}_overclustered"
+    if target_key is None:
+        target_key = f"leiden_{resolution}_{min_corr}"
+    scanpy.tl.leiden( adata, resolution = resolution ,key_added=key)
+    adata.obs[target_key] = [str(n) for n in adata.obs[key] ] # make sure it is no numeric!
+    while ( mergeClosest( adata, group = target_key, cut=min_corr ) ):
+        print ( "w", end=" - ")
+    reIDgroup(adata, group=target_key )
+
+
 def converge_cluster_merging( adata, group_key, cutoff=0.9, layer=None, gene_symbols=None, key_added=None, verbose=True ):
     """
     Iteratively merge clusters until no two cluster mean expression profiles
@@ -1197,7 +1290,7 @@ def reIDgroup( adata, group ):
             if adata.obs[group][x] == i:
                 gr[x] = n
         n = n +1
-    adata.obs[group+'_renamed'] = gr
+    adata.obs[group+'_renamed'] = [ str(n) for n in gr]
 
 
 

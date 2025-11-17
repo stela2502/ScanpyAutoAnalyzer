@@ -198,7 +198,7 @@ scanpy.pp.calculate_qc_metrics( adata, inplace=True)
 
 ```python
 MT = re.compile('^[Mm][Tt]-')
-RP = re.compile('^R[pP][SsLl]')
+RP = re.compile('^R[pP][SsLl]P?[0-9]*$')
 
 genes = [ x  for x in adata.var.index if testGene(x, MT, RP)]
 adata.obs['geneSum'] = adata[:,genes].X.sum(axis=1)
