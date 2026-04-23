@@ -407,6 +407,145 @@ def plot_stacked_bar(adata, value_col, index_col, label_col, color_map, scale_fu
     
     plt.show()
 
+
+def plot_umap_with_leiden_contours_and_values(
+    adata,
+    value_key,
+    contour_group="leiden",
+    basis="X_umap",
+    cells_unselected="lightgray",
+    point_size=8,
+    fill_missing=True,
+    contour_linewidth=1.5,
+    contour_alpha=0.9,
+    bw_adjust=0.5,
+    levels=[0.01],
+):
+    """
+    Plot UMAP colored by `value_key` and overlay contours from `contour_group`.
+
+    Parameters
+    ----------
+    adata : AnnData
+    value_key : str
+        Column in adata.obs to color cells by (e.g. mutation state).
+    contour_group : str
+        Column in adata.obs defining cluster contours, usually 'leiden'.
+    basis : str
+        Key in adata.obsm containing 2D coordinates, usually 'X_umap'.
+    fill_missing : bool
+        If True, cells with missing values in value_key are shown in gray.
+    """
+
+    if basis not in adata.obsm:
+        raise KeyError(
+            f"Coordinates '{basis}' not found in adata.obsm. "
+            f"Available: {list(adata.obsm.keys())}"
+        )
+
+    if value_key not in adata.obs.columns:
+        raise KeyError(
+            f"Value column '{value_key}' not found in adata.obs. "
+            f"Available: {list(adata.obs.columns)}"
+        )
+
+    if contour_group not in adata.obs.columns:
+        raise KeyError(
+            f"Contour group '{contour_group}' not found in adata.obs. "
+            f"Available: {list(adata.obs.columns)}"
+        )
+
+    x = adata.obsm[basis][:, 0]
+    y = adata.obsm[basis][:, 1]
+
+    fig, ax = plt.subplots(figsize=(8, 8))
+
+    values = adata.obs[value_key]
+
+    # Plot cells colored by mutation value
+    if str(values.dtype) == "category" or values.dtype == object:
+        # categorical coloring
+        mask_valid = values.notna() & (values.astype(str) != "NA")
+
+        if fill_missing:
+            ax.scatter(
+                x[~mask_valid], y[~mask_valid],
+                s=point_size, color=cells_unselected, alpha=0.4
+            )
+
+        categories = values[mask_valid].astype(str).unique()
+        palette = sns.color_palette("tab10", n_colors=len(categories))
+        color_map = dict(zip(categories, palette))
+
+        for cat in categories:
+            idx = mask_valid & (values.astype(str) == cat)
+            ax.scatter(
+                x[idx], y[idx],
+                s=point_size,
+                color=color_map[cat],
+                alpha=0.8,
+                label=str(cat)
+            )
+    else:
+        # continuous coloring
+        vals = values.astype(float)
+        mask_valid = vals.notna()
+
+        if fill_missing:
+            ax.scatter(
+                x[~mask_valid], y[~mask_valid],
+                s=point_size, color=cells_unselected, alpha=0.4
+            )
+
+        sc = ax.scatter(
+            x[mask_valid], y[mask_valid],
+            c=vals[mask_valid],
+            s=point_size,
+            cmap="viridis",
+            alpha=0.8
+        )
+        plt.colorbar(sc, ax=ax, label=value_key)
+
+    # Overlay Leiden contours
+    if hasattr(adata.obs[contour_group], "cat"):
+        clusters = adata.obs[contour_group].cat.categories
+    else:
+        clusters = sorted(adata.obs[contour_group].dropna().unique())
+
+    if f"{contour_group}_colors" in adata.uns:
+        cluster_colors = adata.uns[f"{contour_group}_colors"]
+    else:
+        cluster_colors = sns.color_palette("husl", n_colors=len(clusters))
+
+    for cluster, color in zip(clusters, cluster_colors):
+        idx = adata.obs[contour_group] == cluster
+        if np.sum(idx) < 10:
+            continue
+
+        sns.kdeplot(
+            x=x[idx],
+            y=y[idx],
+            bw_adjust=bw_adjust,
+            levels=levels,
+            fill=False,
+            thresh=0.01,
+            color=color,
+            linewidths=contour_linewidth,
+            alpha=contour_alpha,
+            ax=ax,
+        )
+
+    ax.set_title(f"{value_key} with {contour_group} contours")
+    ax.set_xlabel("UMAP1")
+    ax.set_ylabel("UMAP2")
+    ax.axis("off")
+    ax.legend(loc="best", fontsize=8)
+    plt.tight_layout()
+    plt.show()
+
+    return fig, ax
+
+
 def plot_umap_with_cluster_contours(
     adata,
     contour_group='leiden',

@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="ScanpyAutoAnalyzer",
-    version="0.0.2",
+    version="0.0.3",
     author="Stefan Lang",
     author_email="Stefan.Lang@med.lu.se",
     description="A simple tool to prepare and run prepared jupyter notebooks.",
