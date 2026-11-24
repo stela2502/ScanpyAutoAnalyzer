@@ -354,11 +354,24 @@ def plot_dotplot_matrix_legend(adata, value_col, x_col, y_col, color_map,
     plt.show()
 
 
-def plot_stacked_bar(adata, value_col, index_col, label_col, color_map, scale_func=None,
-                     figsize=(10,6), title=None, save_path=None, reverse_legend=True):
+def plot_stacked_bar(
+    adata,
+    value_col,
+    index_col,
+    label_col,
+    color_map,
+    scale_func=None,
+    figsize=(10, 6),
+    title=None,
+    save_path=None,
+    reverse_legend=True,
+    exclude_index=None,
+    exclude_label=None,
+    exclude_value=None,
+):
     """
     Create a stacked bar plot with correctly aligned legend.
-    
+
     Parameters:
         adata: AnnData object
         value_col: str, column to aggregate
@@ -370,41 +383,70 @@ def plot_stacked_bar(adata, value_col, index_col, label_col, color_map, scale_fu
         title: str, optional title
         save_path: str, optional path to save figure
         reverse_legend: bool, if True, reverse legend to match stack order
+        exclude_index: iterable or None, values in index_col to exclude
+        exclude_label: iterable or None, values in label_col to exclude
+        exclude_value: iterable or None, values in value_col to exclude before counting
     """
+    import matplotlib.pyplot as plt
+    import pandas as pd
+
+    obs = adata.obs.copy()
+
+    # Normalize exclusion arguments
+    exclude_index = set() if exclude_index is None else set(exclude_index)
+    exclude_label = set() if exclude_label is None else set(exclude_label)
+    exclude_value = set() if exclude_value is None else set(exclude_value)
+
+    # Apply optional filtering
+    if exclude_index:
+        obs = obs.loc[~obs[index_col].isin(exclude_index)]
+    if exclude_label:
+        obs = obs.loc[~obs[label_col].isin(exclude_label)]
+    if exclude_value:
+        obs = obs.loc[~obs[value_col].isin(exclude_value)]
+
     # Pivot table
-    pivot_tab = adata.obs.pivot_table(values=value_col, index=index_col, columns=label_col, aggfunc='count')
-    
+    pivot_tab = obs.pivot_table(
+        values=value_col,
+        index=index_col,
+        columns=label_col,
+        aggfunc="count",
+        fill_value=0,
+    )
+
+    # Remove empty rows/columns created by categoricals
+    pivot_tab = pivot_tab.loc[pivot_tab.sum(axis=1) > 0, pivot_tab.sum(axis=0) > 0]
+
     # Apply scaling if needed
     if scale_func is not None:
-        pivot_tab = pivot_tab.apply(scale_func, axis=1, result_type='expand')
-    
+        pivot_tab = pivot_tab.apply(scale_func, axis=1, result_type="expand")
+
     # Determine plotting order
-    plot_columns = pivot_tab.columns
+    plot_columns = list(pivot_tab.columns)
     plot_colors = [color_map.get(col, "#7f7f7f") for col in plot_columns]
-    
+
     if reverse_legend:
-        # Reverse columns and colors to match stacking order
         plot_columns = plot_columns[::-1]
         plot_colors = plot_colors[::-1]
         pivot_tab = pivot_tab[plot_columns]
-    
+
     # Plot
     ax = pivot_tab.plot.bar(stacked=True, color=plot_colors, figsize=figsize)
-    
+
     # Legend outside
-    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-    
+    ax.legend(loc="center left", bbox_to_anchor=(1, 0.5))
+
     # Titles & labels
     if title is not None:
         ax.set_title(title)
     plt.ylabel("Counts" if scale_func is None else "Scaled values")
     plt.xlabel(index_col)
     plt.tight_layout()
-    
+
     # Save figure if needed
     if save_path is not None:
-        plt.savefig(save_path, format='svg', bbox_inches='tight')
-    
+        plt.savefig(save_path, format="svg", bbox_inches="tight")
+
     plt.show()
 
 
@@ -1063,7 +1105,7 @@ def write_top_genes_per_cluster(adata, stats_name, n_top_genes=20, output_file="
     with open(output_file, 'w') as f:
         # Write top genes for each cluster
         for cluster in ranked_genes.columns:
-            top_genes = ranked_genes[cluster].tolist()
+            top_genes = ranked_genes[cluster].to_numpy()
             ret[cluster] = top_genes
             f.write(f"{cluster}: {','.join(top_genes)}\n")
 

@@ -15,3 +15,24 @@ requires = [
 
 ]
 build-backend = "setuptools.build_meta"
+
+
+
+[project]
+name = "ScanpyAutoAnalyzer"
+version = "0.0.3"
+description = "Single-cell analysis helpers built around Scanpy and AnnData"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    { name = "Stefan Lang" }
+]
+dependencies = [
+]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["ScanpyAutoAnalyzer*"]
